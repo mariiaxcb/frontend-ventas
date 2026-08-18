@@ -24,7 +24,7 @@ export default function PedidosPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">
+      <h1 className="mb-6 text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
         Pedidos y validación de pagos
       </h1>
 

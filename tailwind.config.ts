@@ -7,13 +7,27 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "sans-serif"],
+        poppins: ["var(--font-poppins)", "sans-serif"],
+        inter: ["var(--font-inter)", "sans-serif"],
+      },
       colors: {
+        brand: {
+          darkest: "#001449",
+          dark: "#012677",
+          primary: "#005BC5",
+          light: "#00B4FC",
+          cyan: "#17F9FF",
+        },
         primary: {
-          DEFAULT: "#FE2C55",
-          dark: "#c8203f",
+          DEFAULT: "#005BC5",
+          dark: "#012677",
+          light: "#00B4FC",
         },
         secondary: {
-          DEFAULT: "#25F4EE",
+          DEFAULT: "#17F9FF",
+          light: "#00B4FC",
         },
         estado: {
           pendiente: "#f59e0b",

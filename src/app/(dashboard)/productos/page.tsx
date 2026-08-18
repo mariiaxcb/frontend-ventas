@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
 import {
   useProductos,
   useCrearProducto,
@@ -40,7 +41,7 @@ export default function ProductosPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Productos en oferta</h1>
+        <h1 className="text-2xl font-poppins font-bold text-brand-cyan tracking-wide">Productos en oferta</h1>
         <Button onClick={() => setModalAbierto(true)}>
           <Plus size={16} className="mr-2" /> Nuevo producto
         </Button>
@@ -92,22 +93,19 @@ export default function ProductosPage() {
         titulo="Nuevo producto"
       >
         <div className="space-y-3">
-          <input
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          <Input
             placeholder="Nombre"
             value={nuevo.nombre}
             onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
           />
-          <input
+          <Input
             type="number"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             placeholder="Precio"
             value={nuevo.precio}
             onChange={(e) => setNuevo({ ...nuevo, precio: Number(e.target.value) })}
           />
-          <input
+          <Input
             type="number"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             placeholder="Stock"
             value={nuevo.stock}
             onChange={(e) => setNuevo({ ...nuevo, stock: Number(e.target.value) })}

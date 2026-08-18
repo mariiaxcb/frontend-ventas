@@ -19,9 +19,9 @@ export default function ReportesPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold">Reportes de ventas</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        Historial de pedidos validados · Total: {formatoMoneda(total)}
+      <h1 className="mb-2 text-2xl font-poppins font-bold text-brand-cyan tracking-wide">Reportes de ventas</h1>
+      <p className="mb-6 text-sm font-inter text-slate-400">
+        Historial de pedidos validados · Total: <span className="font-semibold text-brand-light">{formatoMoneda(total)}</span>
       </p>
 
       <Table>

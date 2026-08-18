@@ -24,11 +24,11 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-gray-200 bg-white">
-      <div className="px-6 py-5 text-lg font-bold text-primary">
+    <aside className="flex h-screen w-60 flex-col border-r border-brand-primary/20 bg-brand-dark text-slate-200">
+      <div className="px-6 py-6 font-poppins font-bold text-lg text-brand-cyan tracking-wide border-b border-brand-primary/10">
         TikTok Live Sales
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1.5 px-3 py-6">
         {items.map(({ href, label, icon: Icon }) => {
           const activo = pathname === href;
           return (
@@ -36,11 +36,11 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100",
-                activo && "bg-primary/10 text-primary"
+                "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-brand-primary/10 hover:text-slate-100 transition-all duration-200",
+                activo && "bg-brand-primary/20 text-brand-cyan font-semibold border-l-2 border-brand-cyan pl-2"
               )}
             >
-              <Icon size={18} />
+              <Icon size={18} className={cn("transition-colors", activo ? "text-brand-cyan" : "text-slate-400")} />
               {label}
             </Link>
           );

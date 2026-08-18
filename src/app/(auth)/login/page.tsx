@@ -13,7 +13,7 @@ import { ROUTES } from "@/lib/constants";
 
 const loginSchema = z.object({
   email: z.string().email("Correo inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  password: z.string().min(3, "Mínimo 3 caracteres"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -29,24 +29,41 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
-  async function onSubmit(values: LoginForm) {
-    setError(null);
-    try {
-      const { data } = await apiClient.post("/auth/login", values);
-      login(data.token, data.usuario);
-      router.push(ROUTES.DASHBOARD);
-    } catch {
+ async function onSubmit(values: LoginForm) {
+  setError(null);
+  try {
+    // 1. Asegúrate de incluir /api/v1 si no está configurado en apiClient.defaults.baseURL
+    // 2. Si tu backend espera 'username', mapeamos 'email' a 'username'
+    const { data } = await apiClient.post("/api/v1/auth/login", {
+      username: values.email,
+      password: values.password,
+    });
+
+    // 3. Tu backend devuelve 'user' (no 'usuario')
+    login(data.token, data.user);
+
+    router.push(ROUTES.DASHBOARD);
+  } catch (err: any) {
+    console.error("Error al iniciar sesión:", err);
+    if (!err.response) {
+      setError("Error de conexión. Verifica que el backend esté encendido y la URL en el archivo .env sea correcta.");
+    } else if (err.response.status === 404) {
+      setError("Ruta no encontrada. Revisa la URL y el puerto del backend.");
+    } else if (err.response.status === 401 || err.response.status === 400) {
       setError("Credenciales inválidas.");
+    } else {
+      setError(err.response.data?.mensaje || err.response.data?.message || "Error al intentar ingresar.");
     }
   }
+}
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-1 text-xl font-bold text-primary">
+    <div className="flex min-h-screen items-center justify-center bg-brand-darkest px-4 text-slate-100">
+      <div className="w-full max-w-sm rounded-lg border border-brand-primary/20 bg-brand-dark p-8 shadow-xl">
+        <h1 className="mb-2 text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
           TikTok Live Sales
         </h1>
-        <p className="mb-6 text-sm text-gray-500">
+        <p className="mb-6 text-sm font-inter text-slate-400">
           Ingresa a tu panel de administración
         </p>
 
@@ -63,8 +80,8 @@ export default function LoginPage() {
             error={errors.password?.message}
             {...register("password")}
           />
-          {error && <p className="text-sm text-estado-rechazado">{error}</p>}
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {error && <p className="text-sm font-inter text-estado-rechazado">{error}</p>}
+          <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
             {isSubmitting ? "Ingresando…" : "Ingresar"}
           </Button>
         </form>
