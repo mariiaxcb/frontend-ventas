@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   createContext,
@@ -6,63 +6,66 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from "react";
+} from 'react'
+import Cookies from 'js-cookie'
+import { COOKIE_KEYS, ROUTES } from '@/lib/constants'
+import type { User, AuthContextValue } from '@/types/auth.types'
+import { useRouter } from 'next/navigation'
 
-interface Usuario {
-  id: string;
-  nombre: string;
-  email: string;
-  rol: string;
-}
-
-interface AuthContextValue {
-  usuario: Usuario | null;
-  token: string | null;
-  cargando: boolean;
-  login: (token: string, usuario: Usuario) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(true);
+  const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUsuario = localStorage.getItem("usuario");
-    if (storedToken && storedUsuario) {
-      setToken(storedToken);
-      setUsuario(JSON.parse(storedUsuario));
-    }
-    setCargando(false);
-  }, []);
+    const storedToken = Cookies.get(COOKIE_KEYS.AUTH_TOKEN)
+    const storedUser = Cookies.get(COOKIE_KEYS.AUTH_USER)
 
-  function login(nuevoToken: string, nuevoUsuario: Usuario) {
-    localStorage.setItem("token", nuevoToken);
-    localStorage.setItem("usuario", JSON.stringify(nuevoUsuario));
-    setToken(nuevoToken);
-    setUsuario(nuevoUsuario);
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken)
+        setUser(JSON.parse(storedUser))
+      } catch {
+        Cookies.remove(COOKIE_KEYS.AUTH_TOKEN)
+        Cookies.remove(COOKIE_KEYS.AUTH_USER)
+      }
+    }
+    setIsLoading(false)
+  }, [])
+
+  function login(newToken: string, newUser: User) {
+    Cookies.set(COOKIE_KEYS.AUTH_TOKEN, newToken, {
+      expires: 7,
+      sameSite: 'lax',
+    })
+    Cookies.set(COOKIE_KEYS.AUTH_USER, JSON.stringify(newUser), {
+      expires: 7,
+      sameSite: 'lax',
+    })
+    setToken(newToken)
+    setUser(newUser)
   }
 
   function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    setToken(null);
-    setUsuario(null);
+    Cookies.remove(COOKIE_KEYS.AUTH_TOKEN)
+    Cookies.remove(COOKIE_KEYS.AUTH_USER)
+    setToken(null)
+    setUser(null)
+    router.push(ROUTES.LOGIN)
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, token, cargando, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
-  return ctx;
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider')
+  return ctx
 }
