@@ -1,6 +1,15 @@
 import { apiClient } from "./api.client";
 import type { Producto, ProductoInput, Categoria } from "@/types/producto";
 
+export interface CrearProductoPayload {
+  name: string;
+  price: number;
+  stock: number;
+  categoryName: string;
+  description?: string;
+  image?: File | null;
+}
+
 export const productosApi = {
   listar: async (): Promise<Producto[]> => {
     const { data } = await apiClient.get<Producto[]>("/productos");
@@ -12,8 +21,27 @@ export const productosApi = {
     return data;
   },
 
-  crear: async (input: ProductoInput): Promise<Producto> => {
-    const { data } = await apiClient.post<Producto>("/productos", input);
+  crear: async (payload: CrearProductoPayload): Promise<Producto> => {
+    const formData = new FormData();
+    formData.append("name", payload.name);
+    formData.append("price", payload.price.toString());
+    formData.append("stock", payload.stock.toString());
+    formData.append("categoryName", payload.categoryName);
+
+    if (payload.description) {
+      formData.append("description", payload.description);
+    }
+
+    if (payload.image) {
+      formData.append("image", payload.image); // Envia el archivo real File
+    }
+
+    const { data } = await apiClient.post<Producto>("/products", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
     return data;
   },
 

@@ -54,14 +54,14 @@ export function useEliminarProducto() {
 export function useCategorias() {
   return useQuery({
     queryKey: QUERY_KEYS.categorias,
-    queryFn: productosApi.listarCategorias, // Asegúrate de definir este método en tu API service
+    queryFn: productosApi.listarCategorias,
   });
 }
 
 export function useCrearCategoria() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (nombre: string) => productosApi.crearCategoria(nombre), // Asegúrate de definir este método en tu API service
+    mutationFn: (nombre: string) => productosApi.crearCategoria(nombre),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categorias });
     },

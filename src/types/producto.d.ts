@@ -7,23 +7,23 @@ export interface Categoria {
 
 export interface Producto {
   id: string;
-  nombre: string;
-  precio: number;
+  name: string;
+  price: number;
   stock: number;
-  descripcion?: string;
-  imagen?: string;
-  categoria?: string; // O Categoria si tu backend retorna el objeto completo
-  estado: EstadoProducto;
+  description?: string;
+  image?: string;
+  categoryName?: string;
+  estado?: EstadoProducto;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface ProductoInput {
-  nombre: string;
-  precio: number;
+  name: string;
+  price: number;
   stock: number;
-  descripcion?: string;
-  imagen?: string;
-  categoria: string;
+  categoryName: string;
+  description?: string;
+  image?: File | null;
   estado?: EstadoProducto;
 }
