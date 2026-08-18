@@ -1,5 +1,5 @@
 import { apiClient } from "./api.client";
-import type { Producto, ProductoInput } from "@/types/producto";
+import type { Producto, ProductoInput, Categoria } from "@/types/producto";
 
 export const productosApi = {
   listar: async (): Promise<Producto[]> => {
@@ -24,5 +24,17 @@ export const productosApi = {
 
   eliminar: async (id: string): Promise<void> => {
     await apiClient.delete(`/productos/${id}`);
+  },
+
+  // --- CATEGORÍAS ---
+
+  listarCategorias: async (): Promise<Categoria[]> => {
+    const { data } = await apiClient.get<Categoria[]>("/categorias");
+    return data;
+  },
+
+  crearCategoria: async (nombre: string): Promise<Categoria> => {
+    const { data } = await apiClient.post<Categoria>("/categorias", { nombre });
+    return data;
   },
 };
