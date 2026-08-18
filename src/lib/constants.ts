@@ -1,28 +1,33 @@
-export const ESTADOS_PEDIDO = {
-  PENDIENTE: "PENDIENTE",
-  VALIDADO: "VALIDADO",
-  RECHAZADO: "RECHAZADO",
-} as const;
+export const ORDER_STATUS = {
+  PENDING: 'PENDING',
+  IN_REVIEW: 'IN_REVIEW',
+  PAID: 'PAID',
+  REJECTED: 'REJECTED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+} as const
 
-export const ESTADO_LABELS: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  VALIDADO: "Validado",
-  RECHAZADO: "Rechazado",
-};
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pending',
+  IN_REVIEW: 'In Review',
+  PAID: 'Paid',
+  REJECTED: 'Rejected',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+}
 
-export const ESTADO_COLORS: Record<string, string> = {
-  PENDIENTE: "bg-estado-pendiente/10 text-estado-pendiente border-estado-pendiente/30",
-  VALIDADO: "bg-estado-validado/10 text-estado-validado border-estado-validado/30",
-  RECHAZADO: "bg-estado-rechazado/10 text-estado-rechazado border-estado-rechazado/30",
-};
+export const APP_NAME = 'TikTok Live Sales Manager'
 
-export const APP_NAME = "TikTok Live Sales Manager";
+export const COOKIE_KEYS = {
+  AUTH_TOKEN: 'auth_token',
+  AUTH_USER: 'auth_user',
+} as const
 
 export const ROUTES = {
-  LOGIN: "/login",
-  DASHBOARD: "/",
-  LIVE: "/live",
-  PRODUCTOS: "/productos",
-  PEDIDOS: "/pedidos",
-  REPORTES: "/reportes",
-};
+  LOGIN: '/login',
+  DASHBOARD: '/',
+  LIVE: '/live',
+  PRODUCTS: '/products',
+  ORDERS: '/orders',
+  REPORTS: '/reports',
+} as const
