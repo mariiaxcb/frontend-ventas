@@ -30,4 +30,5 @@ export const ROUTES = {
   PRODUCTS: '/products',
   ORDERS: '/orders',
   REPORTS: '/reports',
+  WHATSAPP: '/whatsapp',
 } as const

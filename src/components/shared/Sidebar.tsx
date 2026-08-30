@@ -8,6 +8,7 @@ import {
   Package,
   ClipboardList,
   BarChart3,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/lib/constants'
@@ -18,6 +19,7 @@ const items = [
   { href: ROUTES.PRODUCTS, label: 'Products', icon: Package },
   { href: ROUTES.ORDERS, label: 'Orders', icon: ClipboardList },
   { href: ROUTES.REPORTS, label: 'Reports', icon: BarChart3 },
+  { href: ROUTES.WHATSAPP, label: 'WhatsApp Bot', icon: MessageSquare },
 ]
 
 export function Sidebar() {

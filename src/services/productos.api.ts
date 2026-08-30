@@ -1,6 +1,12 @@
 import { apiClient } from "./api.client";
 import type { Producto, ProductoInput, Categoria } from "@/types/producto";
 
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 export interface CrearProductoPayload {
   name: string;
   price: number;
@@ -11,58 +17,81 @@ export interface CrearProductoPayload {
 }
 
 export const productosApi = {
+  // GET: /products -> Retorna el array dentro de data.data
   listar: async (): Promise<Producto[]> => {
-    const { data } = await apiClient.get<Producto[]>("/productos");
-    return data;
+    const response = await apiClient.get<ApiResponse<Producto[]>>("/products");
+    return response.data.data;
   },
 
-  obtener: async (id: string): Promise<Producto> => {
-    const { data } = await apiClient.get<Producto>(`/productos/${id}`);
-    return data;
+  // GET: /products/:id
+  obtener: async (id: string | number): Promise<Producto> => {
+    const response = await apiClient.get<ApiResponse<Producto>>(`/products/${id}`);
+    return response.data.data;
   },
 
-  crear: async (payload: CrearProductoPayload): Promise<Producto> => {
-    const formData = new FormData();
-    formData.append("name", payload.name);
-    formData.append("price", payload.price.toString());
-    formData.append("stock", payload.stock.toString());
-    formData.append("categoryName", payload.categoryName);
+ // POST: /products
+crear: async (payload: CrearProductoPayload): Promise<Producto> => {
+  const formData = new FormData();
+  formData.append("name", payload.name);
+  formData.append("price", payload.price.toString());
+  formData.append("stock", payload.stock.toString());
+  formData.append("categoryName", payload.categoryName);
 
-    if (payload.description) {
-      formData.append("description", payload.description);
+  if (payload.description) {
+    formData.append("description", payload.description);
+  }
+
+  if (payload.image) {
+    formData.append("image", payload.image);
+  }
+
+  const response = await apiClient.post<ApiResponse<Producto>>("/products", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data.data;
+},
+
+  // PUT: /products/:id
+actualizar: async (
+  id: string | number,
+  input: Partial<ProductoInput> | FormData
+): Promise<Producto> => {
+  const isFormData = input instanceof FormData;
+  const response = await apiClient.put<ApiResponse<Producto>>(
+    `/products/${id}`,
+    input,
+    {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
     }
+  );
+  return response.data.data;
+},
 
-    if (payload.image) {
-      formData.append("image", payload.image); // Envia el archivo real File
-    }
-
-    const { data } = await apiClient.post<Producto>("/products", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return data;
+  // DELETE: /products/:id
+  eliminar: async (id: string | number): Promise<void> => {
+    await apiClient.delete(`/products/${id}`);
   },
 
-  actualizar: async (id: string, input: Partial<ProductoInput>): Promise<Producto> => {
-    const { data } = await apiClient.put<Producto>(`/productos/${id}`, input);
-    return data;
-  },
+ // --- CATEGORÍAS ---
 
-  eliminar: async (id: string): Promise<void> => {
-    await apiClient.delete(`/productos/${id}`);
-  },
+// GET: /products/categories
+listarCategorias: async (): Promise<Categoria[]> => {
+  const response = await apiClient.get<ApiResponse<Categoria[]> | Categoria[]>("/products/categories");
 
-  // --- CATEGORÍAS ---
+  // Validación por si la API responde con un objeto envuelto en data o el array directo
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
 
-  listarCategorias: async (): Promise<Categoria[]> => {
-    const { data } = await apiClient.get<Categoria[]>("/categorias");
-    return data;
-  },
+  return response.data?.data || [];
+},
 
-  crearCategoria: async (nombre: string): Promise<Categoria> => {
-    const { data } = await apiClient.post<Categoria>("/categorias", { nombre });
-    return data;
-  },
+// POST: /products/categories
+crearCategoria: async (nombre: string): Promise<Categoria> => {
+  const response = await apiClient.post<ApiResponse<Categoria>>("/products/categories", { name: nombre });
+  return response.data?.data ?? response.data;
+},
 };

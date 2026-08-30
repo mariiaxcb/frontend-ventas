@@ -16,6 +16,9 @@ export interface Producto {
   estado?: EstadoProducto;
   createdAt?: string;
   updatedAt?: string;
+
+  categoryId?: number;
+  category?: Categoria;
 }
 
 export interface ProductoInput {
