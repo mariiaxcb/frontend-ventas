@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/useSocket";
 import type { PostulanteEvento } from "@/types/socket";
 
@@ -13,8 +13,28 @@ export function ListaPostulantes({ onVentaConfirmada }: ListaPostulantesProps) {
   const [postulanteSeleccionado, setPostulanteSeleccionado] = useState<PostulanteEvento | null>(null);
   const [precio, setPrecio] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Escuchar eventos mediante tu hook personalizado
+  // 1. Cargar postulantes iniciales guardados en Redis
+  useEffect(() => {
+    const fetchPostulantesGuardados = async () => {
+      try {
+        const response = await fetch("/api/postulantes"); // Endpoint que lee de Redis
+        if (response.ok) {
+          const data: PostulanteEvento[] = await response.json();
+          setPostulantes(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar postulantes de Redis:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPostulantesGuardados();
+  }, []);
+
+  // 2. Escuchar nuevos eventos por WebSocket y agregarlos
   useSocket({
     onPostulante: (data) => setPostulantes((prev) => [data, ...prev].slice(0, 50)),
   });
@@ -69,7 +89,13 @@ export function ListaPostulantes({ onVentaConfirmada }: ListaPostulantesProps) {
       </div>
 
       <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
-        {postulantes.length === 0 && (
+        {isLoading && (
+          <p className="text-sm text-slate-400 font-inter animate-pulse">
+            Cargando postulantes de Redis...
+          </p>
+        )}
+
+        {!isLoading && postulantes.length === 0 && (
           <p className="text-sm text-slate-400 font-inter">Sin postulaciones aún.</p>
         )}
 
