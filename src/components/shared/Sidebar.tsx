@@ -15,11 +15,11 @@ import { ROUTES } from '@/lib/constants'
 
 const items = [
   { href: ROUTES.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-  { href: ROUTES.LIVE, label: 'Live', icon: Radio },
-  { href: ROUTES.PRODUCTS, label: 'Products', icon: Package },
-  { href: ROUTES.ORDERS, label: 'Orders', icon: ClipboardList },
-  { href: ROUTES.REPORTS, label: 'Reports', icon: BarChart3 },
-  { href: ROUTES.WHATSAPP, label: 'WhatsApp Bot', icon: MessageSquare },
+  { href: ROUTES.LIVE, label: 'Transmision', icon: Radio },
+  { href: ROUTES.PRODUCTS, label: 'Productos', icon: Package },
+  { href: ROUTES.ORDERS, label: 'Pedidos', icon: ClipboardList },
+  { href: ROUTES.REPORTS, label: 'Reportes', icon: BarChart3 },
+  { href: ROUTES.WHATSAPP, label: 'WhatsApp ', icon: MessageSquare },
 ]
 
 export function Sidebar() {
