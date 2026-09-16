@@ -1,41 +1,42 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface Transmision {
-  id: string;
-  tiktokUsername: string;
-  fechaInicio: string;
-  fechaFin?: string;
-  totalComentarios: number;
-  totalVentas: number;
-  estado: "ACTIVA" | "FINALIZADA";
+  id: string
+  tiktokUsername: string
+  fechaInicio: string
+  fechaFin?: string
+  totalComentarios: number
+  totalVentas: number
+  estado: 'ACTIVA' | 'FINALIZADA'
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
 
 export default function HistorialLivePage() {
-  const [transmisiones, setTransmisiones] = useState<Transmision[]>([]);
-  const [cargando, setCargando] = useState<boolean>(true);
+  const [transmisiones, setTransmisiones] = useState<Transmision[]>([])
+  const [cargando, setCargando] = useState<boolean>(true)
 
   useEffect(() => {
     const fetchHistorial = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/tiktok/historial`);
+        const res = await fetch(`${BACKEND_URL}/api/tiktok/historial`)
         if (res.ok) {
-          const data = await res.json();
-          setTransmisiones(data);
+          const data = await res.json()
+          setTransmisiones(data)
         }
       } catch (error) {
-        console.error("Error al obtener historial:", error);
+        console.error('Error al obtener historial:', error)
       } finally {
-        setCargando(false);
+        setCargando(false)
       }
-    };
+    }
 
-    fetchHistorial();
-  }, []);
+    fetchHistorial()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -46,7 +47,8 @@ export default function HistorialLivePage() {
             Historial de Transmisiones
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Consulta el registro de directos monitoreados y sus métricas de venta.
+            Consulta el registro de directos monitoreados y sus métricas de
+            venta.
           </p>
         </div>
 
@@ -60,7 +62,9 @@ export default function HistorialLivePage() {
 
       {/* Listado / Tabla */}
       {cargando ? (
-        <div className="text-center py-10 text-slate-400 text-sm">Cargando historial...</div>
+        <div className="text-center py-10 text-slate-400 text-sm">
+          Cargando historial...
+        </div>
       ) : transmisiones.length === 0 ? (
         <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-8 text-center text-slate-400 text-sm">
           No hay transmisiones registradas aún.
@@ -80,16 +84,19 @@ export default function HistorialLivePage() {
             </thead>
             <tbody className="divide-y divide-slate-800">
               {transmisiones.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={item.id}
+                  className="hover:bg-slate-800/40 transition-colors"
+                >
                   <td className="px-4 py-3 font-semibold text-slate-100">
                     @{item.tiktokUsername}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                        item.estado === "ACTIVA"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-slate-800 text-slate-400"
+                        item.estado === 'ACTIVA'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-slate-800 text-slate-400'
                       }`}
                     >
                       {item.estado}
@@ -119,5 +126,5 @@ export default function HistorialLivePage() {
         </div>
       )}
     </div>
-  );
+  )
 }
