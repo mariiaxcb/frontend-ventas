@@ -1,12 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { productosApi } from "@/services/productos.api";
+import { productosApi, type CrearProductoPayload } from "@/services/productos.api";
 import type { ProductoInput } from "@/types/producto";
 
 const QUERY_KEYS = {
   productos: ["productos"] as const,
   categorias: ["categorias"] as const,
+  validarCodigo: (code: string) => ["validar-codigo", code] as const,
 };
 
 // --- HOOKS DE PRODUCTOS ---
@@ -18,10 +20,30 @@ export function useProductos() {
   });
 }
 
+export function useValidarCodigo(codigo: string) {
+  const [codigoDebounced, setCodigoDebounced] = useState(codigo);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setCodigoDebounced(codigo.trim());
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [codigo]);
+
+  return useQuery({
+    queryKey: QUERY_KEYS.validarCodigo(codigoDebounced),
+    queryFn: () => productosApi.verificarCodigo(codigoDebounced),
+    enabled: codigoDebounced.length > 0, // Solo se ejecuta si hay texto
+    retry: false,
+    staleTime: 1000 * 60, // Cache de 1 minuto
+  });
+}
+
 export function useCrearProducto() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: ProductoInput) => productosApi.crear(input),
+    mutationFn: (input: CrearProductoPayload) => productosApi.crear(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.productos });
     },

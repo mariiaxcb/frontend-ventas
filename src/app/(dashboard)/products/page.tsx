@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Plus, Package, Edit, Trash2, LayoutGrid, List, Power } from "lucide-react";
+import { Plus, Package, Edit, Trash2, LayoutGrid, List, Power, Tag } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/modal/confirmModal";
@@ -168,8 +168,18 @@ export default function ProductosPage() {
                 ) : (
                   <Package size={48} className="text-slate-700" />
                 )}
+
+                {/* CÓDIGO DE PRODUCTO EN GRID */}
+                {producto.code && (
+                  <span className="absolute top-2 left-2 bg-slate-950/80 text-gray-300 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-800 flex items-center gap-1 backdrop-blur-sm">
+                    <Tag size={10} className="text-brand-cyan" />
+                    {producto.code}
+                  </span>
+                )}
+
+                {/* CATEGORÍA EN GRID */}
                 {producto.category?.name && (
-                  <span className="absolute top-2 left-2 bg-slate-900/80 text-brand-cyan text-[10px] font-semibold px-2 py-1 rounded border border-slate-700">
+                  <span className="absolute top-2 right-2 bg-slate-900/80 text-brand-cyan text-[10px] font-semibold px-2 py-1 rounded border border-slate-700 backdrop-blur-sm">
                     {producto.category.name}
                   </span>
                 )}
@@ -227,6 +237,7 @@ export default function ProductosPage() {
             <table className="w-full text-left text-xs text-gray-300">
               <thead className="bg-slate-950/60 text-gray-400 border-b border-slate-800 uppercase tracking-wider">
                 <tr>
+                  <th className="p-4 font-semibold">Código</th>
                   <th className="p-4 font-semibold">Producto</th>
                   <th className="p-4 font-semibold">Categoría</th>
                   <th className="p-4 font-semibold">Precio</th>
@@ -246,6 +257,12 @@ export default function ProductosPage() {
                         !isActive ? "opacity-60 bg-slate-950/30" : ""
                       }`}
                     >
+                      {/* COLUMNA CÓDIGO */}
+                      <td className="p-4">
+                        <span className="font-mono text-[11px] bg-slate-950 text-gray-300 px-2 py-1 rounded border border-slate-800">
+                          {producto.code || "S/C"}
+                        </span>
+                      </td>
                       <td className="p-4">
                         <div className="font-semibold text-white">{producto.name}</div>
                         <div className="text-[11px] text-gray-500 line-clamp-1">

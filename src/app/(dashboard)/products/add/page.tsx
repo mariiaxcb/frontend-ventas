@@ -2,11 +2,11 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useCrearProducto, useCategorias } from "@/hooks/useProductos";
+import { useCrearProducto, useCategorias, useValidarCodigo } from "@/hooks/useProductos";
 
 export default function NuevoProductoPage() {
   const router = useRouter();
@@ -18,12 +18,19 @@ export default function NuevoProductoPage() {
   const [esNuevaCategoria, setEsNuevaCategoria] = useState(false);
 
   // Estados del formulario
+  const [codigo, setCodigo] = useState("");
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState<number | "">("");
   const [stock, setStock] = useState<number | "">("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
+
+  // Manejo de validación mediante React Query
+  const { data: checkCodigo, isLoading: validandoCodigo } = useValidarCodigo(codigo);
+
+  const codigoExiste = checkCodigo?.exists ?? false;
+  const codigoValido = codigo.trim().length > 0 && !codigoExiste && !validandoCodigo;
 
   // Manejo de la imagen
   const [imagenFile, setImagenFile] = useState<File | null>(null);
@@ -48,16 +55,19 @@ export default function NuevoProductoPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Cambiar entre select e input manual
   const toggleModoCategoria = () => {
     setEsNuevaCategoria(!esNuevaCategoria);
-    // Limpiamos los valores al alternar de modo
     setCategoriaSeleccionada("");
     setNuevaCategoria("");
   };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (codigoExiste) {
+      toast.error("El código ingresado ya existe. Ingresa uno diferente.");
+      return;
+    }
 
     const categoriaFinal = esNuevaCategoria
       ? nuevaCategoria.trim()
@@ -69,6 +79,7 @@ export default function NuevoProductoPage() {
     }
 
     const payload = {
+      code: codigo.trim(),
       name: nombre,
       price: Number(precio),
       stock: Number(stock),
@@ -79,11 +90,7 @@ export default function NuevoProductoPage() {
 
     try {
       await crearProducto.mutateAsync(payload);
-
-      // 🚀 Notificación al crear exitosamente
       toast.success("Producto creado con éxito");
-
-      // Redirección y actualización de la ruta
       router.push("/products");
       router.refresh();
     } catch (error: any) {
@@ -109,6 +116,44 @@ export default function NuevoProductoPage() {
         onSubmit={handleSubmit}
         className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4"
       >
+        {/* INPUT CÓDIGO DE PRODUCTO CON VALIDACIÓN EN TIEMPO REAL */}
+        <div>
+          <label className="text-xs text-gray-400 mb-1 block">Código del Producto</label>
+          <div className="relative">
+            <Input
+              placeholder="Ej. PROD-001"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              required
+              className={
+                codigoExiste
+                  ? "border-red-500 focus:ring-red-500"
+                  : codigoValido
+                  ? "border-green-500 focus:ring-green-500"
+                  : ""
+              }
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+              {validandoCodigo && (
+                <Loader2 size={18} className="animate-spin text-gray-400" />
+              )}
+              {!validandoCodigo && codigoValido && (
+                <CheckCircle2 size={18} className="text-green-500" />
+              )}
+              {!validandoCodigo && codigoExiste && (
+                <AlertCircle size={18} className="text-red-500" />
+              )}
+            </div>
+          </div>
+
+          {codigoExiste && (
+            <p className="text-xs mt-1 text-red-400">El código ya está en uso.</p>
+          )}
+          {codigoValido && (
+            <p className="text-xs mt-1 text-green-400">Código disponible.</p>
+          )}
+        </div>
+
         <div>
           <label className="text-xs text-gray-400 mb-1 block">Nombre</label>
           <Input
@@ -119,7 +164,7 @@ export default function NuevoProductoPage() {
           />
         </div>
 
-        {/* CAMPO CATEGORÍA CON BOTÓN TOGGLE */}
+        {/* CAMPO CATEGORÍA */}
         <div>
           <label className="text-xs text-gray-400 mb-1 block">
             {esNuevaCategoria ? "Escribir Nueva Categoría" : "Categoría"}
@@ -258,7 +303,10 @@ export default function NuevoProductoPage() {
           <Button type="button" variant="ghost" onClick={() => router.back()}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={crearProducto.isPending}>
+          <Button
+            type="submit"
+            disabled={crearProducto.isPending || validandoCodigo || codigoExiste}
+          >
             {crearProducto.isPending ? "Guardando..." : "Guardar Producto"}
           </Button>
         </div>
