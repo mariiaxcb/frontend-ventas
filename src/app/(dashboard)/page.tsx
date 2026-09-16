@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const tarjetas = [
     { label: "Ventas validadas", valor: formatoMoneda(totalVentas) },
     { label: "Pedidos pendientes", valor: pendientes },
-    { label: "Productos activos", valor: (productos ?? []).filter((p) => p.activo).length },
+    { label: "Productos activos", valor: (productos ?? []).filter((p) => p.estado !== "INACTIVE").length },
     { label: "Total pedidos", valor: (pedidos ?? []).length },
   ];
 

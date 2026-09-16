@@ -12,6 +12,7 @@ export interface FilteredComment {
   profilePic: string;
   comment: string;
   date: string;
+  fecha?: string;
   uniqueId?: string;
   profilePictureUrl?: string;
   usuario?: string;
@@ -137,15 +138,16 @@ export default function TransitionLivePage() {
 
     socketInstance.on("nueva_intencion_compra", (newComment: FilteredComment) => {
       setComments((prev) => {
+        const timestamp = newComment.date || newComment.fecha || new Date().toISOString();
         const commentWithId = {
           ...newComment,
-          date: newComment.date || new Date().toISOString(),
+          date: timestamp,
         };
 
         const alreadyExists = prev.some(
           (c) =>
             (c.comment === commentWithId.comment || c.comentario === commentWithId.comentario) &&
-            c.date === commentWithId.date &&
+            c.date === timestamp &&
             (c.nickname === commentWithId.nickname || c.user === commentWithId.user)
         );
 
