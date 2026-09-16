@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import io, { Socket } from "socket.io-client";
 import { ChatStream } from "@/components/live/ChatStream";
 import { ListaPostulantes } from "@/components/live/ListaPostulantes";
+import { useAuth } from "@/context/AuthContext";
 
 export interface ComentarioFiltrado {
   usuario: string;
@@ -11,13 +12,16 @@ export interface ComentarioFiltrado {
   fotoPerfil: string;
   comentario: string;
   fecha: string;
+  uniqueId?: string;
+  comment?: string;
+  profilePictureUrl?: string;
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
 export default function LivePage() {
+  const { token } = useAuth();
   const [ventasEnBD, setVentasEnBD] = useState<number>(0);
-  const [titulo, setTitulo] = useState<string>("");
   const [tiktokUsername, setTiktokUsername] = useState<string>("");
   const [palabrasClave, setPalabrasClave] = useState<string>("mio, precio, quiero, comprar");
   const [conectado, setConectado] = useState<boolean>(false);
@@ -28,60 +32,53 @@ export default function LivePage() {
   const activeUserRef = useRef<string>("");
 
   useEffect(() => {
+    if (!token) return;
+
     // Conexión única del cliente Socket
     const socketInstance: Socket = io(BACKEND_URL, {
+      auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
     });
 
     socketRef.current = socketInstance;
 
-    socketInstance.on("connect", () => {
-      console.log("✅ Socket.io conectado ID:", socketInstance.id);
-      
-      // Re-unirse a la sala si se reconecta la conexión
-      if (activeUserRef.current) {
-        socketInstance.emit("join_room", `live:${activeUserRef.current}`);
-      }
-    });
+   // Escuchar la llegada de comentarios en el Frontend
+socketInstance.on("nueva_intencion_compra", (nuevoComentario: ComentarioFiltrado) => {
+  console.log("🎯 Comentario capturado en el Frontend:", nuevoComentario);
 
-    socketInstance.on("disconnect", () => {
-      console.log("❌ Socket.io desconectado");
-      setConectado(false);
-    });
+  setComentarios((prev) => {
+    // Si viene sin fecha válida, asignamos un timestamp único local
+    const comentarioConId = {
+      ...nuevoComentario,
+      fecha: nuevoComentario.fecha || new Date().toISOString(),
+    };
 
-    // Escuchar la llegada de comentarios con filtro deduplicador
-    socketInstance.on("nueva_intencion_compra", (nuevoComentario: ComentarioFiltrado) => {
-      console.log("🎯 Comentario capturado en el Frontend:", nuevoComentario);
+    // Filtro deduplicador estricto por timestamp exacto y contenido
+    const yaExiste = prev.some(
+      (c) =>
+        c.comentario === comentarioConId.comentario &&
+        c.fecha === comentarioConId.fecha &&
+        c.nickname === comentarioConId.nickname
+    );
 
-      setComentarios((prev) => {
-        const yaExiste = prev.some(
-          (c) =>
-            c.usuario === nuevoComentario.usuario &&
-            c.comentario === nuevoComentario.comentario &&
-            c.fecha === nuevoComentario.fecha
-        );
+    if (yaExiste) {
+      console.warn("⚠️ Comentario duplicado omitido en Frontend.");
+      return prev;
+    }
 
-        if (yaExiste) {
-          console.warn("⚠️ Comentario duplicado omitido en Frontend.");
-          return prev;
-        }
-
-        return [nuevoComentario, ...prev];
-      });
-    });
+    return [comentarioConId, ...prev];
+  });
+});
 
     return () => {
       socketInstance.off("nueva_intencion_compra");
       socketInstance.disconnect();
     };
-  }, []);
+  }, [token]);
 
   const handleIniciarMonitoreo = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!titulo.trim()) return alert("Ingresa un título para la transmisión");
-
     const cleanUsername = tiktokUsername.replace(/^@/, "").trim();
     if (!cleanUsername) return alert("Ingresa un usuario de TikTok");
 
@@ -92,21 +89,11 @@ export default function LivePage() {
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
 
-    // Obtener la fecha y hora actuales en ISO string y en formato legible
-    const ahora = new Date();
-    const fechaActual = ahora.toISOString().split("T")[0]; // Formato: YYYY-MM-DD
-    const horaActual = ahora.toTimeString().split(" ")[0]; // Formato: HH:MM:SS
-    const fechaHoraInicio = ahora.toISOString(); // Formato completo ISO
-
     try {
       const response = await fetch(`${BACKEND_URL}/api/tiktok/iniciar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titulo: titulo.trim(),
-          fecha: fechaActual,
-          hora: horaActual,
-          fechaInicio: fechaHoraInicio,
           tiktokUsername: cleanUsername,
           palabrasClave: listaPalabras,
         }),
@@ -119,7 +106,7 @@ export default function LivePage() {
         setComentarios([]); // Limpiar la lista previa
 
         if (socketRef.current) {
-          socketRef.current.emit("join_room", `live:${cleanUsername}`);
+          socketRef.current.emit("live:unirse", cleanUsername);
         }
         setConectado(true);
       } else {
@@ -151,7 +138,7 @@ export default function LivePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
         <div>
           <h1 className="text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
-            Transmisión en TikTok Live
+            Transmision en Tik Tok Live
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             Captura de comentarios y confirmación manual de pedidos a la BD.
@@ -189,74 +176,54 @@ export default function LivePage() {
 
       <form
         onSubmit={handleIniciarMonitoreo}
-        className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex flex-col gap-4"
+        className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex flex-col md:flex-row gap-4 items-end"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="w-full">
-            <label className="text-xs font-medium text-slate-300 block mb-1">
-              Título de la transmisión
-            </label>
-            <input
-              type="text"
-              placeholder="ej. Gran Remate de Verano"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              disabled={conectado}
-              required
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan disabled:opacity-50"
-            />
-          </div>
-
-          <div className="w-full">
-            <label className="text-xs font-medium text-slate-300 block mb-1">
-              Usuario de TikTok (sin @)
-            </label>
-            <input
-              type="text"
-              placeholder="ej. mi_tienda_live"
-              value={tiktokUsername}
-              onChange={(e) => setTiktokUsername(e.target.value)}
-              disabled={conectado}
-              required
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan disabled:opacity-50"
-            />
-          </div>
-
-          <div className="w-full">
-            <label className="text-xs font-medium text-slate-300 block mb-1">
-              Filtro de palabras clave (separadas por coma)
-            </label>
-            <input
-              type="text"
-              placeholder="mio, precio, quiero"
-              value={palabrasClave}
-              onChange={(e) => setPalabrasClave(e.target.value)}
-              disabled={conectado}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan disabled:opacity-50"
-            />
-          </div>
+        <div className="flex-1 w-full">
+          <label className="text-xs font-medium text-slate-300 block mb-1">
+            Usuario de TikTok (sin @)
+          </label>
+          <input
+            type="text"
+            placeholder="ej. mi_tienda_live"
+            value={tiktokUsername}
+            onChange={(e) => setTiktokUsername(e.target.value)}
+            disabled={conectado}
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan disabled:opacity-50"
+          />
         </div>
 
-        <div className="flex justify-end">
-          {conectado ? (
-            <button
-              type="button"
-              onClick={handleDetenerMonitoreo}
-              disabled={cargando}
-              className="w-full md:w-auto px-5 py-2 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-all cursor-pointer disabled:opacity-60"
-            >
-              {cargando ? "Deteniendo..." : "🛑 Detener Lectura"}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={cargando}
-              className="w-full md:w-auto px-5 py-2 rounded-lg text-xs font-semibold text-white bg-brand-cyan hover:bg-cyan-600 transition-all cursor-pointer disabled:opacity-60"
-            >
-              {cargando ? "Conectando..." : "▶️ Iniciar Transmisión"}
-            </button>
-          )}
+        <div className="flex-[2] w-full">
+          <label className="text-xs font-medium text-slate-300 block mb-1">
+            Filtro de palabras clave (separadas por coma)
+          </label>
+          <input
+            type="text"
+            placeholder="mio, precio, quiero"
+            value={palabrasClave}
+            onChange={(e) => setPalabrasClave(e.target.value)}
+            disabled={conectado}
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan disabled:opacity-50"
+          />
         </div>
+
+        {conectado ? (
+          <button
+            type="button"
+            onClick={handleDetenerMonitoreo}
+            disabled={cargando}
+            className="w-full md:w-auto px-5 py-2 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-all cursor-pointer disabled:opacity-60"
+          >
+            {cargando ? "Deteniendo..." : "🛑 Detener Lectura"}
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={cargando}
+            className="w-full md:w-auto px-5 py-2 rounded-lg text-xs font-semibold text-white bg-brand-cyan hover:bg-cyan-600 transition-all cursor-pointer disabled:opacity-60"
+          >
+            {cargando ? "Conectando..." : "▶️ Iniciar Transmisión"}
+          </button>
+        )}
       </form>
 
       <div className="grid h-[calc(80vh-10rem)] grid-cols-1 gap-6 lg:grid-cols-2">

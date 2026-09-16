@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Loader2, Image as ImageIcon, Package } from "lucide-react";
-import toast from "react-hot-toast"; // 👈 Importación correcta
+import { ArrowLeft, Save, Loader2, Image as ImageIcon, Package, CheckCircle2, AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { productosApi } from "@/services/productos.api";
+import { useValidarCodigo } from "@/hooks/useProductos";
 import type { Categoria } from "@/types/producto";
 
 export default function EditarProductoPage() {
@@ -20,13 +22,25 @@ export default function EditarProductoPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // Almacenar el código original para saber si fue modificado
+  const [codigoOriginal, setCodigoOriginal] = useState("");
+
   const [formData, setFormData] = useState({
+    code: "",
     name: "",
     price: 0,
     stock: 0,
     description: "",
     categoryName: "",
   });
+
+  // Hook para validar código
+  const { data: checkCodigo, isLoading: validandoCodigo } = useValidarCodigo(formData.code);
+
+  // Lógica de evaluación del código
+  const codigoCambio = formData.code.trim() !== codigoOriginal.trim();
+  const codigoExiste = codigoCambio && (checkCodigo?.exists ?? false);
+  const codigoValido = codigoCambio && formData.code.trim().length > 0 && !codigoExiste && !validandoCodigo;
 
   useEffect(() => {
     if (!id) return;
@@ -54,7 +68,11 @@ export default function EditarProductoPage() {
           categoriaGuardada = p.categoryName || p.categoria || "";
         }
 
+        const codeVal = p.code || "";
+        setCodigoOriginal(codeVal);
+
         setFormData({
+          code: codeVal,
           name: p.name || "",
           price: Number(p.price) || 0,
           stock: p.stock || 0,
@@ -89,10 +107,16 @@ export default function EditarProductoPage() {
     e.preventDefault();
     if (!id) return;
 
+    if (codigoExiste) {
+      toast.error("El código ingresado ya pertenece a otro producto");
+      return;
+    }
+
     try {
       setSubmitting(true);
 
       const payload = new FormData();
+      payload.append("code", formData.code.trim());
       payload.append("name", formData.name);
       payload.append("price", formData.price.toString());
       payload.append("stock", formData.stock.toString());
@@ -107,10 +131,7 @@ export default function EditarProductoPage() {
 
       await productosApi.actualizar(id, payload);
 
-      // 🚀 Se muestra el toast directamente aquí
       toast.success("Producto actualizado correctamente");
-
-      // Redirección y refresco de vista
       router.push("/products");
       router.refresh();
     } catch (error: any) {
@@ -154,6 +175,46 @@ export default function EditarProductoPage() {
         onSubmit={handleSubmit}
         className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4"
       >
+        {/* INPUT DE CÓDIGO CON VALIDACIÓN */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-300 mb-1">
+            Código del Producto
+          </label>
+          <div className="relative">
+            <Input
+              type="text"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              className={
+                codigoExiste
+                  ? "border-red-500 focus:ring-red-500"
+                  : codigoValido
+                  ? "border-green-500 focus:ring-green-500"
+                  : ""
+              }
+              required
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+              {validandoCodigo && (
+                <Loader2 size={18} className="animate-spin text-gray-400" />
+              )}
+              {!validandoCodigo && codigoValido && (
+                <CheckCircle2 size={18} className="text-green-500" />
+              )}
+              {!validandoCodigo && codigoExiste && (
+                <AlertCircle size={18} className="text-red-500" />
+              )}
+            </div>
+          </div>
+
+          {codigoExiste && (
+            <p className="text-xs mt-1 text-red-400">El código ya está en uso por otro producto.</p>
+          )}
+          {codigoValido && (
+            <p className="text-xs mt-1 text-green-400">Código nuevo disponible.</p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <label className="block text-xs font-semibold text-gray-300">
             Imagen del Producto
@@ -290,7 +351,7 @@ export default function EditarProductoPage() {
           <Button
             type="submit"
             className="flex items-center gap-2"
-            disabled={submitting}
+            disabled={submitting || validandoCodigo || codigoExiste}
           >
             {submitting ? (
               <Loader2 size={16} className="animate-spin" />

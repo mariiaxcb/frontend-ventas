@@ -10,34 +10,33 @@ interface ChatStreamProps {
 }
 
 export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
-  // Mapeo inteligente del nombre de usuario
   const mensajes: ChatMensajeEvento[] = comentarios.map((c) => {
-    // Si usuario es "Usuario_Anonimo" o "Anonimo", usamos el nickname
-    const esAnonimo = !c.usuario || c.usuario === "Usuario_Anonimo" || c.usuario === "Anonimo";
-    const nombreAMostrar = esAnonimo
-      ? c.nickname || c.uniqueId || "Usuario"
-      : c.usuario;
+    // Priorizar Nickname si no es anónimo
+    const nombreAMostrar =
+      c.nickname && c.nickname !== "Usuario_Anonimo"
+        ? c.nickname
+        : c.usuario && c.usuario !== "Usuario_Anonimo"
+        ? c.usuario
+        : c.uniqueId || "Usuario";
 
     return {
       usuarioTiktok: nombreAMostrar,
-      mensaje: c.comentario || c.mensaje || "",
+      mensaje: c.comentario || c.comment || c.mensaje || "",
       timestamp: c.fecha || c.timestamp || new Date().toISOString(),
     };
   });
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-slate-800 bg-slate-900">
-      {/* Cabecera */}
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-950/40">
         <span className="font-poppins font-medium uppercase tracking-wider text-xs text-slate-200">
-          Chat en vivo
+          Chat filtrado de la transmisión
         </span>
         <span className="text-xs text-slate-400 font-inter">
           {mensajes.length} msjs
         </span>
       </div>
 
-      {/* Lista de Mensajes */}
       <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
         {mensajes.length === 0 ? (
           <p className="text-sm text-slate-400 font-inter">

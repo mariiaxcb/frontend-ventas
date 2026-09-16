@@ -8,6 +8,7 @@ export interface Categoria {
 export interface Producto {
   id: string;
   name: string;
+  code: string;
   price: number;
   stock: number;
   description?: string;
