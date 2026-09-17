@@ -8,8 +8,14 @@ export interface ChatMensajeEvento {
 
 export interface PostulanteEvento {
   usuarioTiktok: string;
+  nickname?: string;
   productoId: string;
+  productoNombre?: string;
+  comentario?: string;
   timestamp: string;
+  reservados?: number;
+  limite?: number;
+  stock?: number;
 }
 
 export interface PedidoActualizadoEvento {

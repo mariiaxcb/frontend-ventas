@@ -61,7 +61,6 @@ export default function TransitionLivePage() {
   const [dbSalesCount, setDbSalesCount] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
   const [tiktokUsername, setTiktokUsername] = useState<string>("");
-  const [palabrasClave, setPalabrasClave] = useState<string>("mio, precio, quiero, comprar");
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<FilteredComment[]>([]);
@@ -235,11 +234,6 @@ export default function TransitionLivePage() {
     const cleanUsername = tiktokUsername.replace(/^@/, "").trim();
     if (!cleanUsername) return alert("Ingresa un usuario de TikTok");
 
-    const keywordList = palabrasClave
-      .split(",")
-      .map((p) => p.trim())
-      .filter((p) => p.length > 0);
-
     setIsLoading(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/tiktok/iniciar`, {
@@ -251,7 +245,6 @@ export default function TransitionLivePage() {
         body: JSON.stringify({
           title: title.trim(),
           tiktokUsername: cleanUsername,
-          palabrasClave: keywordList,
         }),
       });
 
@@ -328,7 +321,7 @@ export default function TransitionLivePage() {
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             {!activeStream
-              ? "Inicia una nueva transmisión configurando los datos principales y palabras clave."
+              ? "Inicia una nueva transmisión configurando el título y el usuario de TikTok."
               : "Captura de comentarios y confirmación manual de pedidos a la BD."}
           </p>
         </div>
@@ -392,19 +385,6 @@ export default function TransitionLivePage() {
                 value={tiktokUsername}
                 onChange={(e) => setTiktokUsername(e.target.value)}
                 required
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan"
-              />
-            </div>
-
-            <div className="w-full">
-              <label className="text-xs font-medium text-slate-300 block mb-1">
-                Filtro de palabras clave (separadas por coma)
-              </label>
-              <input
-                type="text"
-                placeholder="mio, precio, quiero"
-                value={palabrasClave}
-                onChange={(e) => setPalabrasClave(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan"
               />
             </div>
@@ -499,7 +479,7 @@ export default function TransitionLivePage() {
             </div>
 
             <div className="h-full">
-              <ListaPostulantes onVentaConfirmada={() => setDbSalesCount((prev) => prev + 1)} />
+              <ListaPostulantes streamId={activeStream.id} onVentaConfirmada={() => setDbSalesCount((prev) => prev + 1)} />
             </div>
           </div>
         </>
