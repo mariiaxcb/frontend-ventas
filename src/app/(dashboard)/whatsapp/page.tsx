@@ -61,7 +61,7 @@ export default function WhatsappBotPage() {
     try {
       const data = await whatsappApi.getStatus();
       setStatus(data.status);
-      setQrText(data.qr);
+      setQrText(data.qr ?? null);
       setErrorMessage(null);
 
       if (isFirst) {
