@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import io, { Socket } from "socket.io-client";
 import { Package } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
+import { apiClient } from "@/services/api.client";
 import { LiveProductsPanel } from "@/components/live/LiveProductsPanel";
-import { LiveChatPanel } from "@/components/live/LiveChatPanel";
 import { NotificationPanel } from "@/components/live/NotificationPanel";
 import { useLiveNotifications } from "@/hooks/useLiveNotifications";
 import { useReservasTimeout } from "@/hooks/useReservasTimeout";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
+import { formatoMoneda } from "@/lib/utils";
 import type { ProductoLive, NotificacionLive } from "@/types/live";
 import type { ChatMensajeEvento, PostulanteEvento } from "@/types/socket";
 
@@ -71,6 +73,7 @@ export default function TransitionLivePage() {
   // Manejo de timeouts de reservas
   const handleReservaTimeout = useCallback(
     (reserva: { usuarioTiktok: string; productoCode: string; productoNombre: string }) => {
+      // Notificación de timeout
       agregarNotificacion({
         tipo: "timeout_tiktok",
         mensaje: `@${reserva.usuarioTiktok} perdió la reserva de ${reserva.productoNombre} (3 min sin confirmar en WhatsApp)`,
@@ -78,6 +81,15 @@ export default function TransitionLivePage() {
         productoCode: reserva.productoCode,
         productoNombre: reserva.productoNombre,
       });
+
+      // Decrementar contador de reservados
+      setProductosLive((prev) =>
+        prev.map((p) =>
+          p.code === reserva.productoCode
+            ? { ...p, reservados: Math.max(0, p.reservados - 1) }
+            : p
+        )
+      );
     },
     [agregarNotificacion]
   );
@@ -139,7 +151,7 @@ export default function TransitionLivePage() {
       setIsConnected(false);
     });
 
-    // Nuevo comentario en el chat
+    // Nuevo comentario en el chat (todos los comentarios)
     socketInstance.on("chat:mensaje", (data: ChatMensajeEvento) => {
       setComments((prev) => {
         const exists = prev.some(
@@ -147,6 +159,23 @@ export default function TransitionLivePage() {
         );
         if (exists) return prev;
         return [data, ...prev].slice(0, 100);
+      });
+    });
+
+    // Intención de compra (comentario con código de producto)
+    socketInstance.on("nueva_intencion_compra", (data: any) => {
+      const comentario: ChatMensajeEvento = {
+        usuarioTiktok: data.usuario || data.usuarioTiktok || "Usuario",
+        mensaje: data.comentario || data.comment || data.mensaje || "",
+        timestamp: data.fecha || data.timestamp || new Date().toISOString(),
+      };
+
+      setComments((prev) => {
+        const exists = prev.some(
+          (c) => c.usuarioTiktok === comentario.usuarioTiktok && c.mensaje === comentario.mensaje
+        );
+        if (exists) return prev;
+        return [comentario, ...prev].slice(0, 100);
       });
     });
 
@@ -171,10 +200,14 @@ export default function TransitionLivePage() {
       });
 
       // Agregar timeout de 3 minutos para TikTok
+      // Usamos un ID basado en usuario+producto para poder cancelarlo después
+      // Normalizamos el código del producto para que coincida al cancelar
+      const productCode = data.productoId.toString().toUpperCase().trim();
+      const reservaId = `tiktok-${data.usuarioTiktok}-${productCode}`;
       agregarReserva({
-        id: `tiktok-${data.usuarioTiktok}-${data.productoId}-${Date.now()}`,
+        id: reservaId,
         usuarioTiktok: data.usuarioTiktok,
-        productoCode: data.productoId,
+        productoCode: productCode,
         productoNombre: data.productoNombre || data.productoId,
         timeoutMs: TIKTOK_TIMEOUT_MS,
       });
@@ -190,42 +223,91 @@ export default function TransitionLivePage() {
       }
     });
 
-    // Pedido actualizado (confirmación desde WhatsApp)
-    socketInstance.on("pedido:actualizado", (data: any) => {
+    // Pedido nuevo (se emite cuando el bot crea el pedido en WPP)
+    socketInstance.on("pedido:nuevo", (data: any) => {
       if (data.pedido) {
         const pedido = data.pedido;
 
-        // Notificación de confirmación
+        // Notificación de nuevo pedido
         agregarNotificacion({
           tipo: "confirmacion",
-          mensaje: `@${pedido.buyer?.tiktokUsername || "Cliente"} confirmó su reserva #${pedido.id}`,
+          mensaje: `Nuevo pedido #${pedido.id} de @${pedido.buyer?.tiktokUsername || "Cliente"}`,
           usuarioTiktok: pedido.buyer?.tiktokUsername,
           pedidoId: pedido.id,
         });
 
-        // Confirmar reserva (cancelar timeout)
-        confirmarReserva(`tiktok-${pedido.buyer?.tiktokUsername}-${pedido.productCode}-${pedido.id}`);
+        // El cliente confirmo su reserva en WhatsApp: cancelamos el timeout
+        // de TikTok para que no se le avise que perdio la reserva.
+        const productCode = (pedido.orderItems?.[0]?.product?.code || pedido.productCode || "")
+          .toString()
+          .toUpperCase()
+          .trim();
+        const usuarioTiktok = (pedido.buyer?.tiktokUsername || "").trim();
+        confirmarReserva(`tiktok-${usuarioTiktok}-${productCode}`);
 
-        // Actualizar productos live
+        // Actualizar productos live - decrementar reservados
         setProductosLive((prev) =>
           prev.map((p) =>
-            p.code === pedido.productCode
-              ? { ...p, vendidos: p.vendidos + 1, reservados: Math.max(0, p.reservados - 1) }
+            p.code === productCode
+              ? { ...p, reservados: Math.max(0, p.reservados - 1) }
               : p
           )
         );
       }
     });
 
-    // Pedido nuevo
-    socketInstance.on("pedido:nuevo", (data: any) => {
+    // Pedido actualizado (cambio de estado: IN_REVIEW, PAID, REJECTED, etc.)
+    socketInstance.on("pedido:actualizado", (data: any) => {
       if (data.pedido) {
         const pedido = data.pedido;
 
+        // Solo notificar si no es un pedido nuevo (para evitar duplicados)
+        // Si el estado es PENDING, es un pedido nuevo y ya se notificó con pedido:nuevo
+        if (pedido.status !== 'PENDING') {
+          // Verificar si ya existe una notificación para este pedido con el mismo estado
+          const yaNotificado = notificaciones.some(
+            (n) => n.pedidoId === pedido.id && n.mensaje.includes(`#${pedido.id}`)
+          );
+
+          if (!yaNotificado) {
+            // Notificación de actualización de estado
+            let mensaje = '';
+            if (pedido.status === 'IN_REVIEW') {
+              mensaje = `Pedido #${pedido.id} en revisión de pago`;
+            } else if (pedido.status === 'PAID') {
+              mensaje = `Pago validado para el pedido #${pedido.id}`;
+            } else if (pedido.status === 'REJECTED') {
+              mensaje = `Pago rechazado para el pedido #${pedido.id}`;
+            } else {
+              mensaje = `Pedido #${pedido.id} actualizado a ${pedido.status}`;
+            }
+
+            agregarNotificacion({
+              tipo: pedido.status === 'PAID' ? 'producto_vendido' : 'confirmacion',
+              mensaje,
+              usuarioTiktok: pedido.buyer?.tiktokUsername,
+              pedidoId: pedido.id,
+            });
+          }
+        }
+      }
+    });
+
+    // Comprobante recibido (el bot procesó el comprobante con OCR)
+    socketInstance.on("comprobante:recibido", (data: any) => {
+      if (data.pedido && data.comprobante) {
+        const pedido = data.pedido;
+        const comprobante = data.comprobante;
+
+        // Notificación especial de comprobante con botón para ver imagen
         agregarNotificacion({
-          tipo: "confirmacion",
-          mensaje: `Nuevo pedido #${pedido.id} de @${pedido.buyer?.tiktokUsername || "Cliente"}`,
+          tipo: "comprobante",
+          mensaje: `Comprobante de pago recibido de @${pedido.buyer?.tiktokUsername || "Cliente"} por ${formatoMoneda(comprobante.extractedAmount)}`,
           usuarioTiktok: pedido.buyer?.tiktokUsername,
+          productoCode: pedido.orderItems?.[0]?.product?.code,
+          productoNombre: pedido.orderItems?.[0]?.product?.name,
+          monto: comprobante.extractedAmount,
+          comprobanteUrl: comprobante.imageUrl,
           pedidoId: pedido.id,
         });
       }
@@ -233,9 +315,11 @@ export default function TransitionLivePage() {
 
     return () => {
       socketInstance.off("chat:mensaje");
+      socketInstance.off("nueva_intencion_compra");
       socketInstance.off("live:postulante");
       socketInstance.off("pedido:actualizado");
       socketInstance.off("pedido:nuevo");
+      socketInstance.off("comprobante:recibido");
       socketInstance.disconnect();
     };
   }, [token, agregarNotificacion, agregarReserva, confirmarReserva]);
@@ -354,7 +438,6 @@ export default function TransitionLivePage() {
           adminId: 1,
         });
         activeUserRef.current = cleanUsername;
-        setComments([]);
         setProductosLive([]);
         limpiarNotificaciones();
 
@@ -399,43 +482,19 @@ export default function TransitionLivePage() {
 
   const handleValidarPago = async (pedidoId: number) => {
     try {
-      await fetch(`${BACKEND_URL}/api/orders/${pedidoId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: "PAID" }),
-      });
-
-      agregarNotificacion({
-        tipo: "producto_vendido",
-        mensaje: `Pago validado para el pedido #${pedidoId}`,
-        pedidoId,
-      });
+      await apiClient.patch(`/orders/${pedidoId}/status`, { status: "PAID" });
     } catch (error) {
-      console.error("Error validating payment:", error);
+      console.error("Error al validar el pago:", error);
+      toast.error("No se pudo validar el pago");
     }
   };
 
   const handleRechazarPago = async (pedidoId: number) => {
     try {
-      await fetch(`${BACKEND_URL}/api/orders/${pedidoId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: "REJECTED" }),
-      });
-
-      agregarNotificacion({
-        tipo: "timeout_wpp",
-        mensaje: `Pago rechazado para el pedido #${pedidoId}`,
-        pedidoId,
-      });
+      await apiClient.patch(`/orders/${pedidoId}/status`, { status: "REJECTED" });
     } catch (error) {
-      console.error("Error rejecting payment:", error);
+      console.error("Error al rechazar el pago:", error);
+      toast.error("No se pudo rechazar el pago");
     }
   };
 
@@ -486,7 +545,7 @@ export default function TransitionLivePage() {
             </div>
 
             <div className="rounded-lg border border-brand-primary/20 bg-brand-dark px-3 py-1.5 text-xs text-slate-300">
-              En cola: <span className="font-bold text-brand-cyan">{comments.length}</span>
+              Reservas: <span className="font-bold text-brand-cyan">{productosLive.reduce((acc, p) => acc + p.reservados, 0)}</span>
             </div>
           </div>
         )}
@@ -531,42 +590,74 @@ export default function TransitionLivePage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-4 rounded-xl border border-brand-primary/20 bg-brand-dark p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-1">
-              <div>
-                <span className="text-xs font-medium text-slate-400">Título: </span>
-                <span className="text-sm font-semibold text-slate-100">{activeStream.title}</span>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {/* Panel de información del stream */}
+            <div className="flex flex-col gap-4 rounded-xl border border-brand-primary/20 bg-brand-dark p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-1">
+                <div>
+                  <span className="text-xs font-medium text-slate-400">Título: </span>
+                  <span className="text-sm font-semibold text-slate-100">{activeStream.title}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-slate-400">Usuario de TikTok: </span>
+                  <span className="text-sm font-semibold text-brand-cyan">
+                    @{activeStream.tiktokUsername}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-xs font-medium text-slate-400">Usuario de TikTok: </span>
-                <span className="text-sm font-semibold text-brand-cyan">
-                  @{activeStream.tiktokUsername}
-                </span>
-              </div>
+
+              <Button variant="danger" onClick={() => setShowEndModal(true)} disabled={isLoading}>
+                Finalizar Live
+              </Button>
             </div>
 
-            <Button variant="danger" onClick={() => setShowEndModal(true)} disabled={isLoading}>
-              Finalizar Live
-            </Button>
+            {/* Chat filtrado (compacto) - a la derecha del panel de información */}
+            <div className="lg:col-span-2">
+              <div className="flex h-full flex-col rounded-xl border border-brand-primary/20 bg-brand-dark">
+                <div className="flex items-center justify-between border-b border-brand-primary/10 p-3">
+                  <span className="font-poppins text-xs font-semibold text-slate-100">
+                    Chat Filtrado
+                  </span>
+                  <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-light">
+                    {comments.length}
+                  </span>
+                </div>
+                <div className="flex-1 space-y-1 overflow-y-auto p-2">
+                  {comments.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                      Sin mensajes
+                    </div>
+                  ) : (
+                    comments.slice(0, 20).map((msg, idx) => (
+                      <div
+                        key={`${msg.usuarioTiktok}-${msg.timestamp}-${idx}`}
+                        className="rounded bg-brand-darkest/30 p-1.5"
+                      >
+                        <span className="font-poppins text-xs font-semibold text-brand-cyan">
+                          @{msg.usuarioTiktok}
+                        </span>
+                        <span className="ml-1 text-xs text-slate-300">{msg.mensaje}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid h-[calc(80vh-10rem)] min-h-[600px] grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Panel izquierdo: Productos + Chat */}
-            <div className="flex flex-col gap-4 lg:col-span-2">
-              <div className="h-1/2">
-                <LiveProductsPanel productos={productosLive} onAddProduct={handleOpenProductModal} />
-              </div>
-              <div className="h-1/2">
-                <LiveChatPanel mensajes={comments} />
-              </div>
+          <div className="grid h-[calc(80vh-10rem)] min-h-[600px] grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Panel izquierdo: Productos */}
+            <div>
+              <LiveProductsPanel productos={productosLive} onAddProduct={handleOpenProductModal} />
             </div>
 
             {/* Panel derecho: Notificaciones */}
-            <div className="lg:col-span-1">
+            <div>
               <NotificationPanel
                 notificaciones={notificaciones}
                 onValidarPago={handleValidarPago}
                 onRechazarPago={handleRechazarPago}
+                token={token ?? undefined}
               />
             </div>
           </div>
