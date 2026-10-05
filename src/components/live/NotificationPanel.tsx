@@ -91,16 +91,16 @@ export function NotificationPanel({
       case "reserva":
         return <Package size={16} className="text-brand-light" />;
       case "confirmacion":
-        return <CheckCircle size={16} className="text-emerald-400" />;
+        return <CheckCircle size={16} className="text-estado-validado" />;
       case "comprobante":
-        return <ShoppingCart size={16} className="text-amber-400" />;
+        return <ShoppingCart size={16} className="text-estado-pendiente" />;
       case "timeout_tiktok":
       case "timeout_wpp":
-        return <Clock size={16} className="text-red-400" />;
+        return <Clock size={16} className="text-estado-rechazado" />;
       case "producto_agotado":
-        return <AlertTriangle size={16} className="text-amber-400" />;
+        return <AlertTriangle size={16} className="text-estado-pendiente" />;
       case "producto_vendido":
-        return <CheckCircle size={16} className="text-emerald-400" />;
+        return <CheckCircle size={16} className="text-estado-validado" />;
       default:
         return <Bell size={16} className="text-slate-400" />;
     }
@@ -111,16 +111,16 @@ export function NotificationPanel({
       case "reserva":
         return "border-l-brand-light";
       case "confirmacion":
-        return "border-l-emerald-400";
+        return "border-l-estado-validado";
       case "comprobante":
-        return "border-l-amber-400";
+        return "border-l-estado-pendiente";
       case "timeout_tiktok":
       case "timeout_wpp":
-        return "border-l-red-400";
+        return "border-l-estado-rechazado";
       case "producto_agotado":
-        return "border-l-amber-400";
+        return "border-l-estado-pendiente";
       case "producto_vendido":
-        return "border-l-emerald-400";
+        return "border-l-estado-validado";
       default:
         return "border-l-slate-400";
     }
@@ -160,9 +160,9 @@ export function NotificationPanel({
   };
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-brand-primary/20 bg-brand-dark">
+    <div className="flex h-full flex-col rounded-xl border border-surface-border bg-brand-dark">
       {/* Header con filtros */}
-      <div className="border-b border-brand-primary/10 p-4">
+      <div className="border-b border-surface-border p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell size={18} className="text-brand-cyan" />
@@ -172,7 +172,7 @@ export function NotificationPanel({
           </div>
           <button
             onClick={() => setExpandido(!expandido)}
-            className="rounded-md p-1 text-slate-400 hover:bg-brand-primary/10 hover:text-slate-200"
+            className="rounded-md p-1 text-slate-400 hover:bg-brand-primary/15 hover:text-slate-200"
           >
             {expandido ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
@@ -186,7 +186,7 @@ export function NotificationPanel({
                 onClick={() => setFiltro(tipo)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   filtro === tipo
-                    ? "bg-brand-primary text-white"
+                    ? "bg-brand-primary text-slate-100"
                     : "bg-brand-darkest/50 text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -258,7 +258,7 @@ export function NotificationPanel({
             {/* Imagen del comprobante - clicable para ampliar */}
             {comprobanteSeleccionado.comprobante.imageUrl ? (
               <div
-                className="group relative cursor-zoom-in overflow-hidden rounded-lg border border-brand-primary/20 bg-brand-darkest/30"
+                className="group relative cursor-zoom-in overflow-hidden rounded-lg border border-surface-border bg-brand-darkest/30"
                 onClick={() => {
                   window.open(comprobanteSeleccionado?.comprobante.imageUrl, "_blank");
                 }}
@@ -270,19 +270,19 @@ export function NotificationPanel({
                   className="max-h-[400px] w-full object-contain transition-transform group-hover:scale-105"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                  <span className="rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-slate-100 backdrop-blur-sm">
                     Clic para ampliar
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="flex h-40 items-center justify-center rounded-lg border border-brand-primary/10 bg-brand-darkest/30">
+              <div className="flex h-40 items-center justify-center rounded-lg border border-surface-border bg-brand-darkest/30">
                 <p className="text-sm text-slate-400">No hay imagen disponible</p>
               </div>
             )}
 
             {/* Información del comprobante */}
-            <div className="rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-4">
+            <div className="rounded-lg border border-surface-border bg-brand-darkest/30 p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">Monto detectado:</span>
@@ -345,7 +345,7 @@ export function NotificationPanel({
             {/* Mensaje si el comprobante ya fue validado o rechazado */}
             {(comprobanteSeleccionado.comprobante.validationStatus === 'VALIDATED' ||
               comprobanteSeleccionado.comprobante.validationStatus === 'REJECTED') && (
-              <div className="rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-3 text-center">
+              <div className="rounded-lg border border-surface-border bg-brand-darkest/30 p-3 text-center">
                 <p className="text-sm text-slate-400">
                   {comprobanteSeleccionado.comprobante.validationStatus === 'VALIDATED'
                     ? 'Este comprobante ya fue validado'

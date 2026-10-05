@@ -37,7 +37,7 @@ export function LiveProductsPanel({ productos, onAddProduct }: LiveProductsPanel
             {productos.map((producto) => (
               <div
                 key={producto.code}
-                className="rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-3"
+                className="rounded-lg border border-surface-border bg-brand-darkest/30 p-3"
               >
                 <div className="flex items-start gap-3">
                   {producto.imageUrl ? (
@@ -48,7 +48,7 @@ export function LiveProductsPanel({ productos, onAddProduct }: LiveProductsPanel
                       className="h-12 w-12 rounded-md object-cover"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-md bg-brand-primary/10">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-md bg-brand-primary/15">
                       <Package size={20} className="text-slate-500" />
                     </div>
                   )}
@@ -73,7 +73,7 @@ export function LiveProductsPanel({ productos, onAddProduct }: LiveProductsPanel
                         <Users size={12} />
                         <span>Reservados: {producto.reservados}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-emerald-400">
+                      <div className="flex items-center gap-1 text-xs text-estado-validado">
                         <ShoppingCart size={12} />
                         <span>Vendidos: {producto.vendidos}</span>
                       </div>

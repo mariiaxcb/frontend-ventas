@@ -33,13 +33,13 @@ export function LiveStats({
       label: "Ventas",
       value: totalVentas,
       icon: ShoppingCart,
-      color: "text-emerald-400",
+      color: "text-estado-validado",
     },
     {
       label: "Conversión",
       value: `${tasaConversion}%`,
       icon: TrendingUp,
-      color: "text-amber-400",
+      color: "text-estado-pendiente",
     },
   ];
 
@@ -47,7 +47,7 @@ export function LiveStats({
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {stats.map((stat) => (
         <Card key={stat.label} className="flex items-center gap-4">
-          <div className={`rounded-lg bg-brand-primary/10 p-3 ${stat.color}`}>
+          <div className={`rounded-lg bg-brand-primary/15 p-3 ${stat.color}`}>
             <stat.icon size={24} />
           </div>
           <div>

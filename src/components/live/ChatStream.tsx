@@ -27,8 +27,8 @@ export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
   });
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-slate-800 bg-slate-900">
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-950/40">
+    <div className="flex h-full flex-col rounded-lg border border-surface-border bg-brand-dark">
+      <div className="flex items-center justify-between border-b border-surface-border px-4 py-3 bg-brand-darkest/50">
         <span className="font-poppins font-medium uppercase tracking-wider text-xs text-slate-200">
           Chat filtrado de la transmisión
         </span>
@@ -49,7 +49,7 @@ export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
             return (
               <div
                 key={uniqueKey}
-                className="group flex items-center justify-between rounded p-1.5 transition-colors hover:bg-slate-800/50"
+                className="group flex items-center justify-between rounded p-1.5 transition-colors hover:bg-surface-hover"
               >
                 <div className="text-sm font-inter pr-2">
                   <span className="font-semibold text-brand-cyan font-poppins">
@@ -62,7 +62,7 @@ export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
                   <button
                     type="button"
                     onClick={() => onPostular(m)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-cyan-500/20 hover:bg-cyan-500/30 text-brand-cyan text-xs px-2 py-1 rounded font-poppins font-medium cursor-pointer"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-estado-validado/20 hover:bg-estado-validado/30 text-brand-cyan text-xs px-2 py-1 rounded font-poppins font-medium cursor-pointer"
                   >
                     Postular
                   </button>

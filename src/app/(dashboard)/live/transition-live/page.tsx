@@ -555,7 +555,7 @@ export default function TransitionLivePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 border-b border-brand-primary/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-surface-border pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-poppins text-2xl font-bold tracking-wide text-brand-cyan">
             Transmisión en TikTok Live
@@ -569,16 +569,16 @@ export default function TransitionLivePage() {
 
         {activeStream && (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-lg border border-brand-primary/20 bg-brand-dark px-3 py-1.5 text-xs">
+            <div className="flex items-center gap-2 rounded-lg border border-surface-border bg-brand-dark px-3 py-1.5 text-xs">
               <span className="relative flex h-2.5 w-2.5">
                 <span
                   className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-                    isConnected ? "bg-emerald-400" : "bg-amber-400"
+                    isConnected ? "bg-estado-validado" : "bg-estado-pendiente"
                   }`}
                 ></span>
                 <span
                   className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-                    isConnected ? "bg-emerald-500" : "bg-amber-500"
+                    isConnected ? "bg-estado-validado" : "bg-estado-pendiente"
                   }`}
                 ></span>
               </span>
@@ -587,7 +587,7 @@ export default function TransitionLivePage() {
               </span>
             </div>
 
-            <div className="rounded-lg border border-brand-primary/20 bg-brand-dark px-3 py-1.5 text-xs text-slate-300">
+            <div className="rounded-lg border border-surface-border bg-brand-dark px-3 py-1.5 text-xs text-slate-300">
               Reservas: <span className="font-bold text-brand-cyan">{productosLive.reduce((acc, p) => acc + p.reservados, 0)}</span>
             </div>
           </div>
@@ -595,24 +595,24 @@ export default function TransitionLivePage() {
       </div>
 
       {!activeStream ? (
-        <div className="mx-auto mt-10 max-w-xl rounded-xl border border-brand-primary/20 bg-brand-dark p-6 shadow-lg">
+        <div className="mx-auto mt-10 max-w-xl rounded-xl border border-surface-border bg-brand-dark p-6 shadow-lg">
           <h2 className="mb-4 text-base font-semibold text-slate-200">
             Configurar Nueva Transmisión
           </h2>
           <form onSubmit={handleCreateStream} className="flex flex-col gap-4">
             {!botConectado && (
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-                <p className="text-sm font-medium text-amber-200">
+              <div className="rounded-lg border border-estado-pendiente/30 bg-estado-pendiente/5 p-4">
+                <p className="text-sm font-medium text-estado-pendiente">
                   Conecta tu WhatsApp para empezar
                 </p>
-                <p className="mt-1 text-xs text-amber-200/70">
+                <p className="mt-1 text-xs text-slate-400">
                   El bot confirma las reservas y avisa a tus clientes cuando
                   validas un pago. Sin esa conexión no puedes transmitir.
                 </p>
                 <button
                   type="button"
                   onClick={() => router.push("/whatsapp")}
-                  className="mt-2 text-xs font-semibold text-amber-300 underline underline-offset-4"
+                  className="mt-2 text-xs font-semibold text-brand-light underline underline-offset-4"
                 >
                   Ir a ChatBot
                 </button>
@@ -635,7 +635,7 @@ export default function TransitionLivePage() {
                 Usuario de TikTok *
               </label>
               <div className="flex items-stretch">
-                <span className="flex items-center rounded-l-md border border-r-0 border-brand-primary/30 bg-brand-darkest px-3 text-sm text-slate-400">
+                <span className="flex items-center rounded-l-md border border-r-0 border-surface-border bg-brand-darkest px-3 text-sm text-slate-400">
                   @
                 </span>
                 <Input
@@ -661,7 +661,7 @@ export default function TransitionLivePage() {
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {/* Panel de información del stream */}
-            <div className="order-1 lg:order-2 lg:col-span-1 flex flex-col gap-4 rounded-xl border border-brand-primary/20 bg-brand-dark p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="order-1 lg:order-2 lg:col-span-1 flex flex-col gap-4 rounded-xl border border-surface-border bg-brand-dark p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-1">
                 <div>
                   <span className="text-xs font-medium text-slate-400">Título: </span>
@@ -682,12 +682,12 @@ export default function TransitionLivePage() {
 
             {/* Chat filtrado (compacto) - a la derecha del panel de información */}
             <div className="order-2 lg:order-1 lg:col-span-2">
-              <div className="flex h-full flex-col rounded-xl border border-brand-primary/20 bg-brand-dark">
-                <div className="flex items-center justify-between border-b border-brand-primary/10 p-3">
+              <div className="flex h-full flex-col rounded-xl border border-surface-border bg-brand-dark">
+                <div className="flex items-center justify-between border-b border-surface-border p-3">
                   <span className="font-poppins text-xs font-semibold text-slate-100">
                     Chat Filtrado
                   </span>
-                  <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-light">
+                  <span className="rounded-full bg-brand-primary/15 px-2 py-0.5 text-[10px] font-medium text-brand-light">
                     {comments.length}
                   </span>
                 </div>

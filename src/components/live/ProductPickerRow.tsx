@@ -37,12 +37,12 @@ export function ProductPickerRow<T extends ProductoSeleccionable>({
       className={cn(
         "flex items-center gap-4 rounded-lg border p-3 transition-colors",
         isAdded
-          ? "border-emerald-500/40 bg-emerald-500/5"
-          : "border-brand-primary/15 bg-brand-darkest/30 hover:border-brand-primary/30"
+          ? "border-estado-validado/40 bg-estado-validado/5"
+          : "border-brand-primary/15 bg-brand-darkest/30 hover:border-surface-border"
       )}
     >
       {/* Imagen grande */}
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-brand-primary/10">
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-brand-primary/15">
         {producto.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -52,7 +52,7 @@ export function ProductPickerRow<T extends ProductoSeleccionable>({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Package size={28} className="text-slate-600" />
+            <Package size={28} className="text-slate-500" />
           </div>
         )}
       </div>
@@ -72,14 +72,14 @@ export function ProductPickerRow<T extends ProductoSeleccionable>({
             className={cn(
               "rounded px-2 py-1 text-xs font-semibold",
               agotado
-                ? "bg-red-500/15 text-red-400"
+                ? "bg-red-500/15 text-estado-rechazado"
                 : "bg-slate-700/40 text-slate-200"
             )}
           >
             Stock: {producto.stock}
           </span>
 
-          <span className="rounded bg-emerald-500/15 px-2 py-1 text-xs font-bold text-emerald-400">
+          <span className="rounded bg-estado-validado/15 px-2 py-1 text-xs font-bold text-estado-validado">
             Bs {Number(producto.price).toFixed(2)}
           </span>
         </div>

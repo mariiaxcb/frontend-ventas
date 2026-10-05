@@ -109,10 +109,10 @@ function ReportRow({ stream, onClick }: ReportRowProps) {
         className="flex w-full items-center justify-between gap-4 text-left"
       >
         <div className="flex min-w-0 flex-1 items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-primary/15">
             <Radio
               size={22}
-              className={enVivo ? "text-emerald-400" : "text-brand-light"}
+              className={enVivo ? "text-estado-validado" : "text-brand-light"}
             />
           </div>
 
@@ -120,8 +120,8 @@ function ReportRow({ stream, onClick }: ReportRowProps) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="truncate font-medium text-slate-100">{stream.title}</span>
               {enVivo ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-estado-validado/10 px-2 py-0.5 text-[10px] font-semibold text-estado-validado">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-estado-validado" />
                   EN VIVO
                 </span>
               ) : (

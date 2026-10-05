@@ -9,8 +9,6 @@ import {
   LogOut,
   AlertTriangle,
   RefreshCw,
-  Smartphone,
-  ArrowRight,
   ServerCrash,
   PlugZap,
 } from "lucide-react";
@@ -39,29 +37,29 @@ const STATUS_VIEW: Record<
   CONNECTED: {
     label: "Conectado",
     description: "El bot responde mensajes y confirma los pagos de tus clientes.",
-    dot: "bg-emerald-500",
-    text: "text-emerald-400",
+    dot: "bg-estado-validado",
+    text: "text-estado-validado",
     icon: CheckCircle2,
   },
   QR_READY: {
     label: "Esperando QR",
     description: "Escanea el código con tu WhatsApp para vincular el dispositivo.",
-    dot: "bg-amber-500",
-    text: "text-amber-400",
+    dot: "bg-estado-pendiente",
+    text: "text-estado-pendiente",
     icon: QrCode,
   },
   INITIALIZING: {
     label: "Conectando",
     description: "El bot se está conectando con WhatsApp. Espera un momento.",
-    dot: "bg-blue-400",
-    text: "text-blue-400",
+    dot: "bg-brand-light",
+    text: "text-brand-light",
     icon: Loader2,
   },
   DISCONNECTED: {
     label: "Desconectado",
     description: "Sin sesión activa. Pide un código QR para volver a conectar.",
-    dot: "bg-red-500",
-    text: "text-red-400",
+    dot: "bg-estado-rechazado",
+    text: "text-estado-rechazado",
     icon: AlertTriangle,
   },
 };
@@ -114,10 +112,10 @@ export default function ChatBotPage() {
       <Card
         className={cn(
           "border-2",
-          conectado && "border-emerald-500/40",
-          status === "QR_READY" && "border-amber-500/40",
-          status === "INITIALIZING" && "border-blue-500/40",
-          (status === "DISCONNECTED" || isError) && "border-red-500/40"
+          conectado && "border-estado-validado/40",
+          status === "QR_READY" && "border-estado-pendiente/40",
+          status === "INITIALIZING" && "border-brand-primary/40",
+          (status === "DISCONNECTED" || isError) && "border-estado-rechazado/40"
         )}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -125,10 +123,10 @@ export default function ChatBotPage() {
             <div
               className={cn(
                 "rounded-full p-3",
-                conectado && "bg-emerald-500/10",
-                status === "QR_READY" && "bg-amber-500/10",
-                status === "INITIALIZING" && "bg-blue-500/10",
-                (status === "DISCONNECTED" || isError) && "bg-red-500/10"
+                conectado && "bg-estado-validado/10",
+                status === "QR_READY" && "bg-estado-pendiente/10",
+                status === "INITIALIZING" && "bg-brand-primary/15",
+                (status === "DISCONNECTED" || isError) && "bg-estado-rechazado/10"
               )}
             >
               <StatusIcon
@@ -203,7 +201,7 @@ export default function ChatBotPage() {
               </div>
             ) : conectado ? (
               <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
-                <CheckCircle2 size={40} className="text-emerald-400" />
+                <CheckCircle2 size={40} className="text-estado-validado" />
                 <p className="text-sm text-slate-300">
                   Tu dispositivo ya está vinculado.
                 </p>
@@ -213,7 +211,7 @@ export default function ChatBotPage() {
               </div>
             ) : status === "INITIALIZING" ? (
               <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
-                <Loader2 size={36} className="animate-spin text-blue-400" />
+                <Loader2 size={36} className="animate-spin text-brand-light" />
                 <p className="text-sm text-slate-300">Generando el código QR</p>
                 <p className="text-xs text-slate-400">
                   El QR aparecerá aquí en unos segundos.
@@ -222,9 +220,9 @@ export default function ChatBotPage() {
             ) : (
               <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
                 {isError ? (
-                  <ServerCrash size={40} className="text-slate-600" />
+                  <ServerCrash size={40} className="text-slate-500" />
                 ) : (
-                  <PlugZap size={40} className="text-slate-600" />
+                  <PlugZap size={40} className="text-slate-500" />
                 )}
                 <p className="text-sm text-slate-300">
                   {isError
@@ -267,8 +265,8 @@ export default function ChatBotPage() {
               </p>
 
               {confirmLogout ? (
-                <div className="space-y-3 rounded-lg border border-red-500/30 bg-red-500/5 p-4">
-                  <p className="text-sm font-medium text-red-300">
+                <div className="space-y-3 rounded-lg border border-estado-rechazado/30 bg-estado-rechazado/5 p-4">
+                  <p className="text-sm font-medium text-estado-rechazado">
                     ¿Seguro que quieres cerrar la sesión?
                   </p>
                   <div className="flex gap-2">
@@ -324,7 +322,7 @@ export default function ChatBotPage() {
               <ol className="space-y-3">
                 {PASOS_VINCULAR.map((paso, index) => (
                   <li key={paso} className="flex items-start gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-semibold text-brand-cyan">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-primary/25 text-xs font-semibold text-brand-cyan">
                       {index + 1}
                     </span>
                     <span className="text-sm text-slate-300">{paso}</span>
@@ -335,38 +333,6 @@ export default function ChatBotPage() {
           </Card>
         </div>
       </div>
-
-      {/* Requisito para transmitir */}
-      {!conectado && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <Smartphone
-                size={20}
-                className="mt-0.5 shrink-0 text-amber-400"
-              />
-              <div>
-                <p className="text-sm font-medium text-amber-200">
-                  No puedes iniciar una transmisión todavía
-                </p>
-                <p className="mt-0.5 text-xs text-amber-200/70">
-                  El bot necesita estar conectado para confirmar las reservas y
-                  los pagos de tus clientes.
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              className="shrink-0 border-amber-500/40 text-amber-300"
-              onClick={handleConnect}
-              disabled={conectar.isPending}
-            >
-              Ir a ChatBot
-              <ArrowRight size={16} />
-            </Button>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

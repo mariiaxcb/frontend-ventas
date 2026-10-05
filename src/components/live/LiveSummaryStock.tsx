@@ -28,7 +28,7 @@ export function LiveSummaryStock({ productos }: LiveSummaryStockProps) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-xs text-slate-300">
-              <thead className="border-b border-brand-primary/20 text-slate-400">
+              <thead className="border-b border-surface-border text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium uppercase tracking-wider">Producto</th>
                   <th className="px-3 py-2 font-medium uppercase tracking-wider">Precio</th>
@@ -40,12 +40,12 @@ export function LiveSummaryStock({ productos }: LiveSummaryStockProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-primary/10">
+              <tbody className="divide-y divide-surface-border/60">
                 {productos.map((producto) => {
                   const agotado = producto.stock === 0;
 
                   return (
-                    <tr key={producto.id} className="hover:bg-brand-primary/5">
+                    <tr key={producto.id} className="hover:bg-brand-primary/10">
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
                           {producto.imageUrl ? (
@@ -56,7 +56,7 @@ export function LiveSummaryStock({ productos }: LiveSummaryStockProps) {
                               className="h-9 w-9 rounded-md object-cover"
                             />
                           ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-primary/10">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-primary/15">
                               <Package size={16} className="text-slate-500" />
                             </div>
                           )}
@@ -66,12 +66,12 @@ export function LiveSummaryStock({ productos }: LiveSummaryStockProps) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-emerald-400">
+                      <td className="px-3 py-3 text-estado-validado">
                         {formatoMoneda(Number(producto.price))}
                       </td>
                       <td className="px-3 py-3 text-right">
                         <span className="inline-flex items-center gap-1 text-slate-200">
-                          <ShoppingCart size={12} className="text-emerald-400" />
+                          <ShoppingCart size={12} className="text-estado-validado" />
                           {producto.sold}
                         </span>
                       </td>
@@ -79,10 +79,10 @@ export function LiveSummaryStock({ productos }: LiveSummaryStockProps) {
                         <span
                           className={
                             agotado
-                              ? "rounded bg-red-500/10 px-2 py-1 font-bold text-red-400"
+                              ? "rounded bg-red-500/10 px-2 py-1 font-bold text-estado-rechazado"
                               : producto.stock <= 5
-                                ? "rounded bg-amber-500/10 px-2 py-1 font-bold text-amber-400"
-                                : "rounded bg-brand-primary/10 px-2 py-1 font-bold text-brand-cyan"
+                                ? "rounded bg-estado-pendiente/10 px-2 py-1 font-bold text-estado-pendiente"
+                                : "rounded bg-brand-primary/15 px-2 py-1 font-bold text-brand-cyan"
                           }
                         >
                           {producto.stock}

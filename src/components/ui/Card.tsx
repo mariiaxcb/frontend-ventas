@@ -12,8 +12,9 @@ export function Card({ children, className, variant = "default" }: CardProps) {
     <div
       className={cn(
         "rounded-xl border p-6 shadow-sm transition-all duration-200",
-        variant === "default" && "border-brand-primary/20 bg-brand-dark",
-        variant === "highlight" && "border-brand-cyan/30 bg-brand-dark shadow-brand-cyan/5",
+        variant === "default" && "border-surface-border bg-brand-dark",
+        variant === "highlight" &&
+          "border-brand-cyan/40 bg-brand-raised shadow-brand-cyan/5",
         variant === "danger" && "border-estado-rechazado/30 bg-brand-dark",
         className
       )}
@@ -57,7 +58,7 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className }: CardFooterProps) {
   return (
-    <div className={cn("mt-4 flex items-center justify-end gap-3 border-t border-brand-primary/10 pt-4", className)}>
+    <div className={cn("mt-4 flex items-center justify-end gap-3 border-t border-surface-border pt-4", className)}>
       {children}
     </div>
   );

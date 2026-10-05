@@ -12,11 +12,27 @@ interface LiveSummaryMetricProps {
   tone?: MetricTone;
 }
 
+/**
+ * Tonos de las metricas. "Dinero generado" y "Ventas" usan el verde de la
+ * paleta para que el vendedor ubique al instante cuanto entro.
+ */
 const TONE_STYLES: Record<MetricTone, { icon: string; value: string }> = {
-  brand: { icon: "bg-brand-primary/10 text-brand-light", value: "text-brand-cyan" },
-  success: { icon: "bg-emerald-500/10 text-emerald-400", value: "text-emerald-400" },
-  warning: { icon: "bg-amber-500/10 text-amber-400", value: "text-amber-400" },
-  danger: { icon: "bg-red-500/10 text-red-400", value: "text-red-400" },
+  brand: {
+    icon: "bg-brand-primary/15 text-brand-light",
+    value: "text-brand-light",
+  },
+  success: {
+    icon: "bg-estado-validado/10 text-estado-validado",
+    value: "text-estado-validado",
+  },
+  warning: {
+    icon: "bg-estado-pendiente/10 text-estado-pendiente",
+    value: "text-estado-pendiente",
+  },
+  danger: {
+    icon: "bg-estado-rechazado/10 text-estado-rechazado",
+    value: "text-estado-rechazado",
+  },
 };
 
 /** Métrica individual del resumen de un live. */

@@ -145,8 +145,8 @@ export function ListaPostulantes({ streamId }: ListaPostulantesProps) {
   const totalCompradores = grupos.reduce((acc, g) => acc + g.compradores.length, 0);
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-slate-800 bg-slate-900 relative">
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-950/40">
+    <div className="flex h-full flex-col rounded-lg border border-surface-border bg-brand-dark relative">
+      <div className="flex items-center justify-between border-b border-surface-border px-4 py-3 bg-brand-darkest/50">
         <span className="font-poppins font-medium uppercase tracking-wider text-xs text-slate-200">
           Compradores con reservacion
         </span>
@@ -163,9 +163,9 @@ export function ListaPostulantes({ streamId }: ListaPostulantesProps) {
         {grupos.map((grupo) => (
           <div
             key={grupo.productoId}
-            className="rounded-md border border-slate-800 bg-slate-950/50 overflow-hidden"
+            className="rounded-md border border-surface-border bg-brand-darkest/60 overflow-hidden"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-3 py-2">
+            <div className="flex items-center justify-between border-b border-surface-border bg-brand-raised px-3 py-2">
               <div className="flex flex-col">
                 <span className="font-poppins font-semibold text-sm text-slate-100">
                   {grupo.productoNombre}
@@ -174,16 +174,16 @@ export function ListaPostulantes({ streamId }: ListaPostulantesProps) {
                   Código: <strong className="text-slate-200">{grupo.productoId}</strong>
                 </span>
               </div>
-              <span className="text-xs font-inter bg-cyan-500/10 text-brand-cyan border border-cyan-500/20 px-2 py-1 rounded">
+              <span className="text-xs font-inter bg-estado-validado/10 text-estado-validado border-estado-validado/20 px-2 py-1 rounded">
                 {grupo.compradores.length}
                 {grupo.limite !== undefined ? `/${grupo.limite}` : ""}
               </span>
             </div>
 
-            <ul className="divide-y divide-slate-800/60">
+            <ul className="divide-y divide-surface-border/60">
               {grupo.compradores.map((c, i) => (
                 <li key={`${c.usuarioTiktok}-${i}`} className="px-3 py-2">
-                  <span className="font-poppins font-medium text-sm text-cyan-400">
+                  <span className="font-poppins font-medium text-sm text-estado-validado">
                     @{c.usuarioTiktok}
                   </span>
                   {c.comentario && (

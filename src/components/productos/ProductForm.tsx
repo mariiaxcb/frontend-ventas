@@ -134,7 +134,7 @@ export function ProductForm({ producto, onSuccess, onCancel }: ProductFormProps)
               </label>
               <select
                 {...register("categoryName")}
-                className="w-full rounded-md border border-brand-primary/30 bg-brand-darkest px-3 py-2.5 text-sm text-slate-100 focus:border-brand-cyan focus:outline-none"
+                className="w-full rounded-md border border-surface-border bg-brand-darkest px-3 py-2.5 text-sm text-slate-100 focus:border-brand-cyan focus:outline-none"
               >
                 <option value="">Seleccionar categoría</option>
                 {categorias?.map((cat) => (
@@ -156,7 +156,7 @@ export function ProductForm({ producto, onSuccess, onCancel }: ProductFormProps)
                 {...register("description")}
                 rows={3}
                 placeholder="Descripción del producto..."
-                className="w-full rounded-md border border-brand-primary/30 bg-brand-darkest px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:border-brand-cyan focus:outline-none"
+                className="w-full rounded-md border border-surface-border bg-brand-darkest px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:border-brand-cyan focus:outline-none"
               />
             </div>
 
@@ -168,7 +168,7 @@ export function ProductForm({ producto, onSuccess, onCancel }: ProductFormProps)
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="w-full text-sm text-slate-400 file:mr-4 file:rounded-md file:border-0 file:bg-brand-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-light"
+                className="w-full text-sm text-slate-400 file:mr-4 file:rounded-md file:border-0 file:bg-brand-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-100 hover:file:bg-brand-light"
               />
             </div>
           </div>
