@@ -145,7 +145,7 @@ export default function EditarProductoPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-24 text-gray-400">
+      <div className="flex justify-center items-center py-24 text-slate-400">
         <Loader2 className="animate-spin mr-2" size={20} />
         Cargando datos del producto...
       </div>
@@ -157,7 +157,7 @@ export default function EditarProductoPage() {
       <div className="flex items-center gap-4">
         <Link
           href="/products"
-          className="p-2 text-gray-400 hover:text-white bg-slate-900 border border-slate-800 rounded-lg"
+          className="p-2 text-slate-400 hover:text-slate-100 bg-brand-dark border border-surface-border rounded-lg"
         >
           <ArrowLeft size={18} />
         </Link>
@@ -165,7 +165,7 @@ export default function EditarProductoPage() {
           <h1 className="text-2xl font-poppins font-bold text-brand-cyan">
             Editar Producto
           </h1>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-400">
             Modificando información del producto #{id}
           </p>
         </div>
@@ -173,11 +173,11 @@ export default function EditarProductoPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4"
+        className="bg-brand-dark border border-surface-border rounded-xl p-6 space-y-4"
       >
         {/* INPUT DE CÓDIGO CON VALIDACIÓN */}
         <div>
-          <label className="block text-xs font-semibold text-gray-300 mb-1">
+          <label className="block text-xs font-semibold text-slate-300 mb-1">
             Código del Producto
           </label>
           <div className="relative">
@@ -187,7 +187,7 @@ export default function EditarProductoPage() {
               onChange={(e) => setFormData({ ...formData, code: e.target.value })}
               className={
                 codigoExiste
-                  ? "border-red-500 focus:ring-red-500"
+                  ? "border-estado-rechazado focus:ring-estado-rechazado/20"
                   : codigoValido
                   ? "border-green-500 focus:ring-green-500"
                   : ""
@@ -196,19 +196,19 @@ export default function EditarProductoPage() {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
               {validandoCodigo && (
-                <Loader2 size={18} className="animate-spin text-gray-400" />
+                <Loader2 size={18} className="animate-spin text-slate-400" />
               )}
               {!validandoCodigo && codigoValido && (
                 <CheckCircle2 size={18} className="text-green-500" />
               )}
               {!validandoCodigo && codigoExiste && (
-                <AlertCircle size={18} className="text-red-500" />
+                <AlertCircle size={18} className="text-estado-rechazado" />
               )}
             </div>
           </div>
 
           {codigoExiste && (
-            <p className="text-xs mt-1 text-red-400">El código ya está en uso por otro producto.</p>
+            <p className="text-xs mt-1 text-estado-rechazado">El código ya está en uso por otro producto.</p>
           )}
           {codigoValido && (
             <p className="text-xs mt-1 text-green-400">Código nuevo disponible.</p>
@@ -216,11 +216,11 @@ export default function EditarProductoPage() {
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold text-gray-300">
+          <label className="block text-xs font-semibold text-slate-300">
             Imagen del Producto
           </label>
           <div className="flex items-center gap-4">
-            <div className="w-24 h-24 bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex items-center justify-center shrink-0 relative">
+            <div className="w-24 h-24 bg-brand-darkest border border-surface-border rounded-lg overflow-hidden flex items-center justify-center shrink-0 relative">
               {imagePreview ? (
                 <img
                   src={imagePreview}
@@ -228,7 +228,7 @@ export default function EditarProductoPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Package size={32} className="text-slate-700" />
+                <Package size={32} className="text-slate-500" />
               )}
             </div>
 
@@ -242,12 +242,12 @@ export default function EditarProductoPage() {
               />
               <label
                 htmlFor="product-image"
-                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-white rounded-lg cursor-pointer border border-slate-700 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-surface-hover text-xs text-slate-100 rounded-lg cursor-pointer border border-surface-border transition-colors"
               >
                 <ImageIcon size={14} />
                 <span>{imagePreview ? "Cambiar imagen" : "Subir imagen"}</span>
               </label>
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-slate-400 mt-1">
                 Soporta PNG, JPG, WEBP.
               </p>
             </div>
@@ -255,20 +255,20 @@ export default function EditarProductoPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-300 mb-1">
+          <label className="block text-xs font-semibold text-slate-300 mb-1">
             Nombre del Producto
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan"
+            className="w-full bg-brand-darkest border border-surface-border rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-cyan"
             required
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-300 mb-1">
+          <label className="block text-xs font-semibold text-slate-300 mb-1">
             Categoría
           </label>
           <select
@@ -276,7 +276,7 @@ export default function EditarProductoPage() {
             onChange={(e) =>
               setFormData({ ...formData, categoryName: e.target.value })
             }
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan"
+            className="w-full bg-brand-darkest border border-surface-border rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-cyan"
             required
           >
             <option value="" disabled>
@@ -297,7 +297,7 @@ export default function EditarProductoPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Precio ($)
             </label>
             <input
@@ -307,13 +307,13 @@ export default function EditarProductoPage() {
               onChange={(e) =>
                 setFormData({ ...formData, price: Number(e.target.value) })
               }
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan"
+              className="w-full bg-brand-darkest border border-surface-border rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-cyan"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Stock
             </label>
             <input
@@ -322,14 +322,14 @@ export default function EditarProductoPage() {
               onChange={(e) =>
                 setFormData({ ...formData, stock: Number(e.target.value) })
               }
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan"
+              className="w-full bg-brand-darkest border border-surface-border rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-cyan"
               required
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-300 mb-1">
+          <label className="block text-xs font-semibold text-slate-300 mb-1">
             Descripción
           </label>
           <textarea
@@ -338,11 +338,11 @@ export default function EditarProductoPage() {
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan resize-none"
+            className="w-full bg-brand-darkest border border-surface-border rounded-lg p-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-cyan resize-none"
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-border">
           <Link href="/products">
             <Button type="button" variant="outline" disabled={submitting}>
               Cancelar

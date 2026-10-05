@@ -90,7 +90,7 @@ function ResumenContent() {
       <Card>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-brand-primary/10 p-3">
+            <div className="rounded-lg bg-brand-primary/15 p-3">
               <Radio size={20} className="text-brand-light" />
             </div>
             <div>
@@ -122,7 +122,7 @@ function ResumenContent() {
                 className={
                   resumen.status === "ENDED"
                     ? "font-medium text-slate-200"
-                    : "font-medium text-emerald-400"
+                    : "font-medium text-estado-validado"
                 }
               >
                 {resumen.status === "ENDED" ? "Finalizado" : "En vivo"}
@@ -186,7 +186,7 @@ function ResumenContent() {
               {resumen.ordersSummary.map((item) => (
                 <div
                   key={item.status}
-                  className="rounded-lg border border-brand-primary/10 bg-brand-darkest/40 p-3"
+                  className="rounded-lg border border-surface-border bg-brand-darkest/40 p-3"
                 >
                   <p className="text-xs text-slate-400">
                     {ORDER_STATUS_LABELS[item.status] ?? item.status}

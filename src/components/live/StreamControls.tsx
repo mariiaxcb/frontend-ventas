@@ -28,7 +28,7 @@ export function StreamControls({
           <div className="flex items-center gap-2">
             <div
               className={`h-2.5 w-2.5 rounded-full ${
-                isLive ? "animate-pulse bg-emerald-500" : "bg-slate-500"
+                isLive ? "animate-pulse bg-estado-validado" : "bg-slate-500"
               }`}
             />
             <span className="text-xs font-medium text-slate-400">

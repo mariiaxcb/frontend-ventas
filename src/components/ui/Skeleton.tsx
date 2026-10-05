@@ -9,7 +9,7 @@ export function Skeleton({ className, variant = "text" }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-brand-primary/10",
+        "animate-pulse rounded-md bg-brand-primary/15",
         variant === "text" && "h-4 w-full",
         variant === "circular" && "h-10 w-10 rounded-full",
         variant === "rectangular" && "h-24 w-full",
@@ -21,7 +21,7 @@ export function Skeleton({ className, variant = "text" }: SkeletonProps) {
 
 export function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-brand-primary/20 bg-brand-dark p-6">
+    <div className="rounded-xl border border-surface-border bg-brand-dark p-6">
       <Skeleton variant="text" className="mb-2 h-6 w-3/4" />
       <Skeleton variant="text" className="mb-4 h-4 w-1/2" />
       <Skeleton variant="rectangular" className="h-24 w-full" />

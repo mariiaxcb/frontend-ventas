@@ -16,8 +16,8 @@ export function BotStatus({ status, onStart, onStop, onRestart }: BotStatusProps
   const statusConfig = {
     CONNECTED: {
       icon: Wifi,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
+      color: "text-estado-validado",
+      bg: "bg-estado-validado/10",
       label: "Conectado",
       description: "El bot está activo y procesando mensajes",
     },
@@ -30,8 +30,8 @@ export function BotStatus({ status, onStart, onStop, onRestart }: BotStatusProps
     },
     QR_READY: {
       icon: AlertCircle,
-      color: "text-amber-400",
-      bg: "bg-amber-500/10",
+      color: "text-estado-pendiente",
+      bg: "bg-estado-pendiente/10",
       label: "Esperando QR",
       description: "Escanea el código QR para conectar",
     },
@@ -57,8 +57,8 @@ export function BotStatus({ status, onStart, onStop, onRestart }: BotStatusProps
             <div
               className={cn(
                 "h-2.5 w-2.5 rounded-full",
-                status === "CONNECTED" && "animate-pulse bg-emerald-500",
-                status === "QR_READY" && "animate-pulse bg-amber-500",
+                status === "CONNECTED" && "animate-pulse bg-estado-validado",
+                status === "QR_READY" && "animate-pulse bg-estado-pendiente",
                 status === "INITIALIZING" && "animate-spin bg-blue-400",
                 status === "DISCONNECTED" && "bg-slate-500"
               )}

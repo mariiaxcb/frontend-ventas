@@ -1,13 +1,19 @@
 import { cn } from "@/lib/utils";
 import { ESTADO_PEDIDO_LABELS, type EstadoPedido } from "@/types/pedido";
 
-/** Colores por estado, alineados con la paleta de la marca. */
+/**
+ * Colores por estado del pedido.
+ *
+ * El verde se reserva para lo que entro dinero (pagada, entregada), el ambar
+ * para lo que espera accion del vendedor y el rojo para lo que salio mal. Asi
+ * el vendedor lee el tablero de un vistazo sin leer los textos.
+ */
 const ESTADO_STYLES: Record<EstadoPedido, string> = {
-  PENDING: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  IN_REVIEW: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-  PAID: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-  DELIVERED: "bg-brand-primary/10 text-brand-light border-brand-primary/30",
-  REJECTED: "bg-red-500/10 text-red-400 border-red-500/30",
+  PENDING: "bg-estado-pendiente/10 text-estado-pendiente border-estado-pendiente/30",
+  IN_REVIEW: "bg-sky-500/10 text-sky-400 border-sky-500/30",
+  PAID: "bg-estado-validado/10 text-estado-validado border-estado-validado/30",
+  DELIVERED: "bg-brand-primary/15 text-brand-light border-brand-primary/30",
+  REJECTED: "bg-estado-rechazado/10 text-estado-rechazado border-estado-rechazado/30",
   CANCELLED: "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 

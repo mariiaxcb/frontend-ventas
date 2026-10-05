@@ -89,8 +89,8 @@ export function Pagination({
                 className={cn(
                   "h-8 min-w-8 rounded-md px-2 text-xs font-medium transition-colors",
                   p === pagina
-                    ? "bg-brand-primary text-white"
-                    : "text-slate-400 hover:bg-brand-primary/10 hover:text-slate-200"
+                    ? "bg-brand-primary text-slate-100"
+                    : "text-slate-400 hover:bg-brand-primary/15 hover:text-slate-200"
                 )}
               >
                 {p}

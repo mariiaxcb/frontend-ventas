@@ -18,7 +18,7 @@ export function LiveChatPanel({ mensajes }: LiveChatPanelProps) {
             Chat del Live (Filtrado)
           </h3>
         </div>
-        <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-xs font-medium text-brand-light">
+        <span className="rounded-full bg-brand-primary/15 px-2 py-0.5 text-xs font-medium text-brand-light">
           {mensajes.length} mensajes
         </span>
       </div>
@@ -32,7 +32,7 @@ export function LiveChatPanel({ mensajes }: LiveChatPanelProps) {
           mensajes.map((mensaje, index) => (
             <div
               key={`${mensaje.usuarioTiktok}-${mensaje.timestamp}-${index}`}
-              className="rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-2"
+              className="rounded-lg border border-surface-border bg-brand-darkest/30 p-2"
             >
               <div className="flex items-start gap-2">
                 <span className="font-poppins text-sm font-semibold text-brand-cyan">

@@ -28,13 +28,13 @@ export function ProductCard({ producto, onEdit, onDelete }: ProductCardProps) {
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <Package size={48} className="text-slate-600" />
+            <Package size={48} className="text-slate-500" />
           </div>
         )}
 
         {/* Código badge */}
         {producto.code && (
-          <span className="absolute left-2 top-2 rounded border border-brand-primary/30 bg-brand-darkest/80 px-2 py-0.5 font-mono text-[10px] text-slate-300 backdrop-blur-sm">
+          <span className="absolute left-2 top-2 rounded border border-surface-border bg-brand-darkest/80 px-2 py-0.5 font-mono text-[10px] text-slate-300 backdrop-blur-sm">
             {producto.code}
           </span>
         )}
@@ -44,7 +44,7 @@ export function ProductCard({ producto, onEdit, onDelete }: ProductCardProps) {
           <span
             className={
               isActive
-                ? "rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
+                ? "rounded-full bg-estado-validado/10 border border-estado-validado/30 px-2 py-0.5 text-[10px] font-medium text-estado-validado"
                 : "rounded-full bg-slate-500/10 border border-slate-500/30 px-2 py-0.5 text-[10px] font-medium text-slate-400"
             }
           >
@@ -59,7 +59,7 @@ export function ProductCard({ producto, onEdit, onDelete }: ProductCardProps) {
             {producto.name}
           </h3>
           {producto.category?.nombre && (
-            <span className="shrink-0 rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-light">
+            <span className="shrink-0 rounded-full bg-brand-primary/15 px-2 py-0.5 text-[10px] font-medium text-brand-light">
               {producto.category.nombre}
             </span>
           )}
@@ -69,7 +69,7 @@ export function ProductCard({ producto, onEdit, onDelete }: ProductCardProps) {
           <p className="mb-3 line-clamp-2 text-xs text-slate-400">{producto.description}</p>
         )}
 
-        <div className="mt-auto flex items-center justify-between border-t border-brand-primary/10 pt-3">
+        <div className="mt-auto flex items-center justify-between border-t border-surface-border pt-3">
           <span className="font-poppins text-lg font-bold text-brand-cyan">
             {formatoMoneda(Number(producto.price))}
           </span>

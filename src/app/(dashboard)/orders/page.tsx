@@ -99,8 +99,8 @@ export default function PedidosPage() {
               }}
               className={
                 filtro === item.value
-                  ? "rounded-full bg-brand-primary px-3 py-1.5 text-xs font-semibold text-white"
-                  : "rounded-full border border-brand-primary/20 bg-brand-dark px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-200"
+                  ? "rounded-full bg-brand-primary px-3 py-1.5 text-xs font-semibold text-slate-100"
+                  : "rounded-full border border-surface-border bg-brand-dark px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-200"
               }
             >
               {item.label} ({total})
@@ -144,7 +144,7 @@ export default function PedidosPage() {
                 key={pedido.id}
                 className={
                   pendiente
-                    ? "border-amber-500/40 bg-brand-dark"
+                    ? "border-estado-pendiente/40 bg-brand-dark"
                     : undefined
                 }
               >
@@ -159,7 +159,7 @@ export default function PedidosPage() {
                         className="h-12 w-12 shrink-0 rounded-md object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-primary/10">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-primary/15">
                         <Receipt size={20} className="text-slate-500" />
                       </div>
                     )}
@@ -171,7 +171,7 @@ export default function PedidosPage() {
                         </span>
                         <Badge estado={pedido.status} />
                         {pendiente && (
-                          <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
+                          <span className="rounded bg-estado-pendiente/15 px-2 py-0.5 text-[10px] font-semibold text-estado-pendiente">
                             Requiere tu validación
                           </span>
                         )}

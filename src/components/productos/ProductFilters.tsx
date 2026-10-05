@@ -25,7 +25,7 @@ export function ProductFilters({
   categories,
 }: ProductFiltersProps) {
   return (
-    <div className="mb-6 flex flex-col gap-4 rounded-xl border border-brand-primary/20 bg-brand-dark p-4 sm:flex-row sm:items-center">
+    <div className="mb-6 flex flex-col gap-4 rounded-xl border border-surface-border bg-brand-dark p-4 sm:flex-row sm:items-center">
       <div className="flex-1">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -44,7 +44,7 @@ export function ProductFilters({
           <select
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
-            className="rounded-md border border-brand-primary/30 bg-brand-darkest px-3 py-2 text-sm text-slate-200 focus:border-brand-cyan focus:outline-none"
+            className="rounded-md border border-surface-border bg-brand-darkest px-3 py-2 text-sm text-slate-200 focus:border-brand-cyan focus:outline-none"
           >
             <option value="">Todas las categorías</option>
             {categories.map((cat) => (
@@ -58,7 +58,7 @@ export function ProductFilters({
         <select
           value={selectedStatus}
           onChange={(e) => onStatusChange(e.target.value as EstadoProducto | "")}
-          className="rounded-md border border-brand-primary/30 bg-brand-darkest px-3 py-2 text-sm text-slate-200 focus:border-brand-cyan focus:outline-none"
+          className="rounded-md border border-surface-border bg-brand-darkest px-3 py-2 text-sm text-slate-200 focus:border-brand-cyan focus:outline-none"
         >
           <option value="">Todos los estados</option>
           <option value="ACTIVE">Activo</option>

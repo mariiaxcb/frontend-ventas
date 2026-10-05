@@ -55,7 +55,7 @@ export function PedidoComprobanteModal({
       <Modal abierto={!!pedido} onClose={onClose} titulo={`Comprobante - Pedido #${pedido.id}`}>
         <div className="space-y-4">
           {/* Datos del pedido */}
-          <div className="grid grid-cols-2 gap-3 rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-4 text-sm">
+          <div className="grid grid-cols-2 gap-3 rounded-lg border border-surface-border bg-brand-darkest/30 p-4 text-sm">
             <div>
               <p className="text-xs text-slate-400">Cliente</p>
               <p className="mt-0.5 font-medium text-slate-100">
@@ -89,7 +89,7 @@ export function PedidoComprobanteModal({
             <button
               type="button"
               onClick={() => setImagenAmpliada(true)}
-              className="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-brand-primary/20 bg-brand-darkest/40"
+              className="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-surface-border bg-brand-darkest/40"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -97,13 +97,13 @@ export function PedidoComprobanteModal({
                 alt={`Comprobante del pedido ${pedido.id}`}
                 className="max-h-[320px] w-full object-contain transition-transform group-hover:scale-[1.03]"
               />
-              <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+              <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium text-slate-100 backdrop-blur-sm">
                 <Eye size={12} />
                 Ampliar
               </span>
             </button>
           ) : (
-            <div className="rounded-lg border border-dashed border-brand-primary/20 bg-brand-darkest/20 p-8 text-center">
+            <div className="rounded-lg border border-dashed border-surface-border bg-brand-darkest/20 p-8 text-center">
               <p className="text-sm text-slate-400">
                 Este pedido todavía no tiene comprobante
               </p>
@@ -112,7 +112,7 @@ export function PedidoComprobanteModal({
 
           {/* Monto detectado por el OCR */}
           {comprobante?.extractedAmount != null && (
-            <div className="flex items-center justify-between rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-3">
+            <div className="flex items-center justify-between rounded-lg border border-surface-border bg-brand-darkest/30 p-3">
               <span className="text-sm text-slate-400">Monto detectado por OCR</span>
               <span className="font-poppins text-base font-bold text-brand-cyan">
                 {formatoMoneda(Number(comprobante.extractedAmount))}
@@ -122,7 +122,7 @@ export function PedidoComprobanteModal({
 
           {/* Acciones del vendedor */}
           {pendienteDeDecision && onValidar && onRechazar && (
-            <div className="flex gap-3 border-t border-brand-primary/10 pt-4">
+            <div className="flex gap-3 border-t border-surface-border pt-4">
               <Button
                 variant="danger"
                 className="flex-1"
@@ -154,7 +154,7 @@ export function PedidoComprobanteModal({
           <button
             type="button"
             onClick={() => setImagenAmpliada(false)}
-            className="mb-3 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/20"
+            className="mb-3 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-slate-100 backdrop-blur-sm hover:bg-white/20"
           >
             <X size={16} />
             Cerrar

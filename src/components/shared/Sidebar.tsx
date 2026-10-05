@@ -24,8 +24,8 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-brand-primary/20 bg-brand-dark text-slate-200">
-      <div className="px-6 py-6 font-poppins font-bold text-lg text-brand-cyan tracking-wide border-b border-brand-primary/10">
+    <aside className="flex h-screen w-60 flex-col border-r border-surface-border bg-brand-dark text-slate-200">
+      <div className="border-b border-surface-border px-6 py-6 font-poppins text-lg font-bold tracking-wide text-brand-cyan">
         TikTok Live Sales
       </div>
       <nav className="flex-1 space-y-1.5 px-3 py-6">
@@ -36,9 +36,9 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-brand-primary/10 hover:text-slate-100 transition-all duration-200',
+                'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-surface-hover hover:text-slate-100',
                 isActive &&
-                  'bg-brand-primary/20 text-brand-cyan font-semibold border-l-2 border-brand-cyan pl-2',
+                  'border-l-2 border-brand-cyan bg-brand-primary/15 pl-2 font-semibold text-brand-cyan',
               )}
             >
               <Icon

@@ -51,7 +51,7 @@ export function LiveSummaryOrders({ ordenes }: { ordenes: ResumenOrden[] }) {
               return (
                 <div
                   key={orden.id}
-                  className="flex flex-col gap-3 rounded-lg border border-brand-primary/10 bg-brand-darkest/40 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border border-surface-border bg-brand-darkest/40 p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     {producto?.imageUrl ? (
@@ -62,7 +62,7 @@ export function LiveSummaryOrders({ ordenes }: { ordenes: ResumenOrden[] }) {
                         className="h-12 w-12 shrink-0 rounded-md object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-primary/10">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-primary/15">
                         <Receipt size={20} className="text-slate-500" />
                       </div>
                     )}
@@ -160,7 +160,7 @@ function ComprobanteVisor({ url, orden, onClose }: ComprobanteVisorProps) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-3 rounded-xl border border-brand-primary/20 bg-brand-dark p-4"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-3 rounded-xl border border-surface-border bg-brand-dark p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3">
