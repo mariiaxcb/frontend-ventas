@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import io, { Socket } from "socket.io-client";
 import { Package } from "lucide-react";
 import toast from "react-hot-toast";
@@ -8,8 +9,9 @@ import { useAuth } from "@/context/AuthContext";
 import { apiClient } from "@/services/api.client";
 import { LiveProductsPanel } from "@/components/live/LiveProductsPanel";
 import { NotificationPanel } from "@/components/live/NotificationPanel";
+import { ProductPickerRow } from "@/components/live/ProductPickerRow";
 import { useLiveNotifications } from "@/hooks/useLiveNotifications";
-import { useReservasTimeout } from "@/hooks/useReservasTimeout";
+import { useBotStatus } from "@/hooks/useBotStatus";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -19,8 +21,6 @@ import type { ProductoLive, NotificacionLive } from "@/types/live";
 import type { ChatMensajeEvento, PostulanteEvento } from "@/types/socket";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-const TIKTOK_TIMEOUT_MS = 180000; // 3 minutos
-const WPP_TIMEOUT_MS = 300000; // 5 minutos
 
 interface ActiveStream {
   id: number;
@@ -51,6 +51,7 @@ interface Product {
 
 export default function TransitionLivePage() {
   const { token } = useAuth();
+  const router = useRouter();
   const [activeStream, setActiveStream] = useState<ActiveStream | null>(null);
   const [verifying, setVerifying] = useState<boolean>(true);
   const [title, setTitle] = useState<string>("");
@@ -70,22 +71,34 @@ export default function TransitionLivePage() {
   const activeUserRef = useRef<string>("");
   const { notificaciones, agregarNotificacion, limpiarNotificaciones } = useLiveNotifications();
 
-  // Manejo de timeouts de reservas
-  const handleReservaTimeout = useCallback(
-    (reserva: { usuarioTiktok: string; productoCode: string; productoNombre: string }) => {
-      // Notificación de timeout
+  // El bot debe estar conectado: sin él no hay confirmación de pagos por WPP.
+  const { data: botSession } = useBotStatus();
+  const botStatus = botSession?.status ?? "DISCONNECTED";
+  const botConectado = botStatus === "CONNECTED";
+
+  /**
+   * El backend es quien vence las reservas y las marca como CANCELLED, para
+   * que el estado persista aunque el vendedor cierre la aplicación. Aquí solo
+   * se refleja lo que el backend ya decidió.
+   */
+  const handleReservaCancelada = useCallback(
+    (reserva: {
+      tiktokUsername: string;
+      productCode: string;
+      productName: string;
+    }) => {
       agregarNotificacion({
         tipo: "timeout_tiktok",
-        mensaje: `@${reserva.usuarioTiktok} perdió la reserva de ${reserva.productoNombre} (3 min sin confirmar en WhatsApp)`,
-        usuarioTiktok: reserva.usuarioTiktok,
-        productoCode: reserva.productoCode,
-        productoNombre: reserva.productoNombre,
+        mensaje: `@${reserva.tiktokUsername} perdió la reserva de ${reserva.productName} (3 min sin confirmar en WhatsApp)`,
+        usuarioTiktok: reserva.tiktokUsername,
+        productoCode: reserva.productCode,
+        productoNombre: reserva.productName,
       });
 
-      // Decrementar contador de reservados
+      // El cupo vuelve a estar disponible para otro comprador.
       setProductosLive((prev) =>
         prev.map((p) =>
-          p.code === reserva.productoCode
+          p.code === reserva.productCode
             ? { ...p, reservados: Math.max(0, p.reservados - 1) }
             : p
         )
@@ -93,8 +106,6 @@ export default function TransitionLivePage() {
     },
     [agregarNotificacion]
   );
-
-  const { agregarReserva, confirmarReserva } = useReservasTimeout(handleReservaTimeout);
 
   // Cargar stream activo
   useEffect(() => {
@@ -199,18 +210,8 @@ export default function TransitionLivePage() {
         productoNombre: data.productoNombre,
       });
 
-      // Agregar timeout de 3 minutos para TikTok
-      // Usamos un ID basado en usuario+producto para poder cancelarlo después
-      // Normalizamos el código del producto para que coincida al cancelar
-      const productCode = data.productoId.toString().toUpperCase().trim();
-      const reservaId = `tiktok-${data.usuarioTiktok}-${productCode}`;
-      agregarReserva({
-        id: reservaId,
-        usuarioTiktok: data.usuarioTiktok,
-        productoCode: productCode,
-        productoNombre: data.productoNombre || data.productoId,
-        timeoutMs: TIKTOK_TIMEOUT_MS,
-      });
+      // El vencimiento de esta reserva lo controla el backend: él la marca
+      // como CANCELLED y avisa por socket. Aquí no duplicamos el temporizador.
 
       // Verificar si el producto se agotó
       if (data.reservados && data.limite && data.reservados >= data.limite) {
@@ -236,14 +237,13 @@ export default function TransitionLivePage() {
           pedidoId: pedido.id,
         });
 
-        // El cliente confirmo su reserva en WhatsApp: cancelamos el timeout
-        // de TikTok para que no se le avise que perdio la reserva.
+        // El cliente confirmó su reserva en WhatsApp. La reserva ya fue marcada
+        // como CLAIMED al crear la orden, así que el backend no la vencerá
+        // y no llegará ninguna notificación de cancelación.
         const productCode = (pedido.orderItems?.[0]?.product?.code || pedido.productCode || "")
           .toString()
           .toUpperCase()
           .trim();
-        const usuarioTiktok = (pedido.buyer?.tiktokUsername || "").trim();
-        confirmarReserva(`tiktok-${usuarioTiktok}-${productCode}`);
 
         // Actualizar productos live - decrementar reservados
         setProductosLive((prev) =>
@@ -313,6 +313,22 @@ export default function TransitionLivePage() {
       }
     });
 
+    // Reserva vencida: el backend la marcó CANCELLED porque el comprador
+    // no confirmó en WhatsApp dentro del plazo.
+    socketInstance.on(
+      "reserva:cancelada",
+      (data: {
+        reservaId: number;
+        tiktokUsername: string;
+        productCode: string;
+        productName: string;
+        streamId: number;
+      }) => {
+        if (activeStream && data.streamId !== activeStream.id) return;
+        handleReservaCancelada(data);
+      }
+    );
+
     return () => {
       socketInstance.off("chat:mensaje");
       socketInstance.off("nueva_intencion_compra");
@@ -320,9 +336,10 @@ export default function TransitionLivePage() {
       socketInstance.off("pedido:actualizado");
       socketInstance.off("pedido:nuevo");
       socketInstance.off("comprobante:recibido");
+      socketInstance.off("reserva:cancelada");
       socketInstance.disconnect();
     };
-  }, [token, agregarNotificacion, agregarReserva, confirmarReserva]);
+  }, [token, agregarNotificacion, handleReservaCancelada]);
 
   const fetchAllProducts = async () => {
     if (!token) return;
@@ -406,9 +423,18 @@ export default function TransitionLivePage() {
 
   const handleCreateStream = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return alert("Ingresa un título para la transmisión");
+
+    // Sin WhatsApp conectado el bot no puede confirmar reservas ni pagos,
+    // así que la transmisión no serviría de nada.
+    if (botStatus !== "CONNECTED") {
+      toast.error("Conecta tu ChatBot antes de iniciar una transmisión");
+      router.push("/whatsapp");
+      return;
+    }
+
+    if (!title.trim()) return toast.error("Ingresa un título para la transmisión");
     const cleanUsername = tiktokUsername.replace(/^@/, "").trim();
-    if (!cleanUsername) return alert("Ingresa un usuario de TikTok");
+    if (!cleanUsername) return toast.error("Ingresa un usuario de TikTok");
 
     setIsLoading(true);
     try {
@@ -457,14 +483,26 @@ export default function TransitionLivePage() {
   };
 
   const handleStopStream = async () => {
+    if (!activeStream) return;
+
     setIsLoading(true);
+    const finishedStreamId = activeStream.id;
+
     try {
-      await fetch(`${BACKEND_URL}/api/tiktok/detener`, {
+      // Este endpoint ya detiene la lectura de comentarios y cierra el stream
+      // en el backend. No se llama aparte a /streams/:id/end porque ahí el
+      // stream ya quedó finalizado y la operación respondería error.
+      const response = await fetch(`${BACKEND_URL}/api/tiktok/detener`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (!response.ok) {
+        throw new Error(`El backend respondió ${response.status}`);
+      }
+
       activeUserRef.current = "";
       setIsConnected(false);
       setActiveStream(null);
@@ -473,8 +511,13 @@ export default function TransitionLivePage() {
       setShowEndModal(false);
       setProductosLive([]);
       limpiarNotificaciones();
+
+      // El resumen necesita el id del live porque, al finalizarlo, ya no
+      // existe ninguna transmision activa que consultar.
+      router.push(`/live/summary?streamId=${finishedStreamId}`);
     } catch (error) {
       console.error("Error stopping stream:", error);
+      toast.error("No se pudo finalizar la transmision");
     } finally {
       setIsLoading(false);
     }
@@ -557,6 +600,24 @@ export default function TransitionLivePage() {
             Configurar Nueva Transmisión
           </h2>
           <form onSubmit={handleCreateStream} className="flex flex-col gap-4">
+            {!botConectado && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                <p className="text-sm font-medium text-amber-200">
+                  Conecta tu WhatsApp para empezar
+                </p>
+                <p className="mt-1 text-xs text-amber-200/70">
+                  El bot confirma las reservas y avisa a tus clientes cuando
+                  validas un pago. Sin esa conexión no puedes transmitir.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/whatsapp")}
+                  className="mt-2 text-xs font-semibold text-amber-300 underline underline-offset-4"
+                >
+                  Ir a ChatBot
+                </button>
+              </div>
+            )}
             <div className="w-full">
               <label className="mb-1 block text-xs font-medium text-slate-300">
                 Título de la transmisión *
@@ -571,14 +632,22 @@ export default function TransitionLivePage() {
 
             <div className="w-full">
               <label className="mb-1 block text-xs font-medium text-slate-300">
-                Usuario de TikTok (sin @) *
+                Usuario de TikTok *
               </label>
-              <Input
-                type="text"
-                placeholder="ej. mi_tienda_live"
-                value={tiktokUsername}
-                onChange={(e) => setTiktokUsername(e.target.value)}
-              />
+              <div className="flex items-stretch">
+                <span className="flex items-center rounded-l-md border border-r-0 border-brand-primary/30 bg-brand-darkest px-3 text-sm text-slate-400">
+                  @
+                </span>
+                <Input
+                  type="text"
+                  placeholder="mi_tienda_live"
+                  value={tiktokUsername}
+                  onChange={(e) =>
+                    setTiktokUsername(e.target.value.replace(/^@/, ""))
+                  }
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end pt-2">
@@ -592,7 +661,7 @@ export default function TransitionLivePage() {
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {/* Panel de información del stream */}
-            <div className="flex flex-col gap-4 rounded-xl border border-brand-primary/20 bg-brand-dark p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="order-1 lg:order-2 lg:col-span-1 flex flex-col gap-4 rounded-xl border border-brand-primary/20 bg-brand-dark p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-1">
                 <div>
                   <span className="text-xs font-medium text-slate-400">Título: </span>
@@ -612,7 +681,7 @@ export default function TransitionLivePage() {
             </div>
 
             {/* Chat filtrado (compacto) - a la derecha del panel de información */}
-            <div className="lg:col-span-2">
+            <div className="order-2 lg:order-1 lg:col-span-2">
               <div className="flex h-full flex-col rounded-xl border border-brand-primary/20 bg-brand-dark">
                 <div className="flex items-center justify-between border-b border-brand-primary/10 p-3">
                   <span className="font-poppins text-xs font-semibold text-slate-100">
@@ -688,46 +757,15 @@ export default function TransitionLivePage() {
                   No se encontraron productos.
                 </div>
               ) : (
-                filteredProducts.map((product) => {
-                  const isAdded = productosLive.some((p) => p.code === product.code);
-                  const isProcessing = processingProductCode === product.code;
-
-                  return (
-                    <div
-                      key={product.code}
-                      className="flex items-center justify-between rounded-lg border border-brand-primary/10 bg-brand-darkest/30 p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        {product.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="h-10 w-10 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-primary/10">
-                            <Package size={16} className="text-slate-500" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium text-slate-200">{product.name}</p>
-                          <p className="text-xs text-slate-400">
-                            Cód: {product.code} · Stock: {product.stock} · ${product.price}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant={isAdded ? "danger" : "primary"}
-                        className="min-w-[80px] py-1.5 text-xs"
-                        onClick={() => toggleProductInStream(product)}
-                        disabled={isProcessing}
-                      >
-                        {isProcessing ? "..." : isAdded ? "Quitar" : "Agregar"}
-                      </Button>
-                    </div>
-                  );
-                })
+                filteredProducts.map((product) => (
+                  <ProductPickerRow
+                    key={product.code}
+                    producto={product}
+                    isAdded={productosLive.some((p) => p.code === product.code)}
+                    isProcessing={processingProductCode === product.code}
+                    onToggle={toggleProductInStream}
+                  />
+                ))
               )}
             </div>
           </div>

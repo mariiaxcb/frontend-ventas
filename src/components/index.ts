@@ -8,33 +8,21 @@ export { Card, CardHeader, CardContent, CardFooter } from "./ui/Card";
 export { Skeleton, SkeletonCard, SkeletonTable } from "./ui/Skeleton";
 export { EmptyState } from "./ui/EmptyState";
 
-// Layout Components
+// Layout
 export { Sidebar } from "./shared/Sidebar";
 export { Navbar } from "./shared/Navbar";
 export { PageHeader } from "./layout/PageHeader";
 
-// Product Components
-export { ProductCard } from "./productos/ProductCard";
-export { ProductGrid } from "./productos/ProductGrid";
-export { ProductFilters } from "./productos/ProductFilters";
-
-// Order Components
-export { OrderCard } from "./pedidos/OrderCard";
-export { OrderFilters } from "./pedidos/OrderFilters";
-export { ComprobanteViewer } from "./pedidos/ComprobanteViewer";
-
-// Dashboard Components
-export { StatsCard } from "./dashboard/StatsCard";
-export { RecentOrders } from "./dashboard/RecentOrders";
-
-// Live Components
-export { ChatStream } from "./live/ChatStream";
-export { ListaPostulantes } from "./live/ListaPostulantes";
-export { LiveStats } from "./live/LiveStats";
-export { StreamControls } from "./live/StreamControls";
-
-// WhatsApp Components
+// Live
+export { LiveProductsPanel } from "./live/LiveProductsPanel";
+export { NotificationPanel } from "./live/NotificationPanel";
+export { ProductPickerRow } from "./live/ProductPickerRow";
+export { LiveSummaryMetric } from "./live/LiveSummaryMetric";
+export { LiveSummaryStock } from "./live/LiveSummaryStock";
 export { BotStatus } from "./whatsapp/BotStatus";
 
-// Modal Components
+// Pedidos
+export { PedidoComprobanteModal } from "./pedidos/PedidoComprobanteModal";
+
+// Modales
 export { ConfirmModal } from "./modal/confirmModal";

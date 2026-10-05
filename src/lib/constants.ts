@@ -43,8 +43,11 @@ export const COOKIE_KEYS = {
 
 export const ROUTES = {
   LOGIN: '/login',
-  DASHBOARD: '/',
+  /** Raíz del panel: entra directamente a Productos. */
+  DASHBOARD: '/products',
   LIVE: '/live',
+  LIVE_TRANSITION: '/live/transition-live',
+  LIVE_SUMMARY: '/live/summary',
   PRODUCTS: '/products',
   ORDERS: '/orders',
   REPORTS: '/reports',

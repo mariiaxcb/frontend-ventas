@@ -15,6 +15,14 @@ export function useStreams() {
   });
 }
 
+export function useStreamSummary(streamId?: number) {
+  return useQuery({
+    queryKey: ["stream-summary", streamId ?? "active"],
+    queryFn: () => streamsApi.getSummary(streamId),
+    enabled: streamId != null,
+  });
+}
+
 export function useActiveStream() {
   return useQuery({
     queryKey: QUERY_KEYS.activeStream,
