@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { Edit, Trash2, Package } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { formatoMoneda } from "@/lib/utils";
 import type { Producto } from "@/types/producto";
@@ -42,7 +41,15 @@ export function ProductCard({ producto, onEdit, onDelete }: ProductCardProps) {
 
         {/* Estado badge */}
         <div className="absolute right-2 top-2">
-          <Badge estado={isActive ? "VALIDADO" : "RECHAZADO"} />
+          <span
+            className={
+              isActive
+                ? "rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
+                : "rounded-full bg-slate-500/10 border border-slate-500/30 px-2 py-0.5 text-[10px] font-medium text-slate-400"
+            }
+          >
+            {isActive ? "Activo" : "Inactivo"}
+          </span>
         </div>
       </div>
 

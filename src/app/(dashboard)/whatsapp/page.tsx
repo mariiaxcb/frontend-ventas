@@ -1,677 +1,372 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import {
-  MessageSquare,
-  Play,
-  Square,
-  RefreshCw,
-  CheckCircle,
-  AlertCircle,
+  CheckCircle2,
+  QrCode,
   Loader2,
+  LogOut,
+  AlertTriangle,
+  RefreshCw,
   Smartphone,
-  Terminal,
-  Server,
-  Link2,
-  Image as ImageIcon,
-  Check,
-  Send,
+  ArrowRight,
+  ServerCrash,
+  PlugZap,
 } from "lucide-react";
-import { whatsappApi, type WhatsappBotStatus } from "@/services/whatsapp.api";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardContent } from "@/components/ui/Card";
+import { PageHeader } from "@/components/layout/PageHeader";
+import {
+  useBotStatus,
+  useBotLogout,
+  useBotConnect,
+} from "@/hooks/useBotStatus";
+import type { BotStatus } from "@/services/bot.api";
+import { cn } from "@/lib/utils";
 
-interface LogMessage {
-  id: string;
-  time: string;
-  source: "SYSTEM" | "BOT" | "DATABASE" | "OCR" | "CLOUDINARY";
-  message: string;
-  type: "info" | "success" | "warn" | "error";
-}
+/** Estado visual del bot: color, icono y texto. */
+const STATUS_VIEW: Record<
+  BotStatus,
+  {
+    label: string;
+    description: string;
+    dot: string;
+    text: string;
+    icon: typeof CheckCircle2;
+  }
+> = {
+  CONNECTED: {
+    label: "Conectado",
+    description: "El bot responde mensajes y confirma los pagos de tus clientes.",
+    dot: "bg-emerald-500",
+    text: "text-emerald-400",
+    icon: CheckCircle2,
+  },
+  QR_READY: {
+    label: "Esperando QR",
+    description: "Escanea el código con tu WhatsApp para vincular el dispositivo.",
+    dot: "bg-amber-500",
+    text: "text-amber-400",
+    icon: QrCode,
+  },
+  INITIALIZING: {
+    label: "Conectando",
+    description: "El bot se está conectando con WhatsApp. Espera un momento.",
+    dot: "bg-blue-400",
+    text: "text-blue-400",
+    icon: Loader2,
+  },
+  DISCONNECTED: {
+    label: "Desconectado",
+    description: "Sin sesión activa. Pide un código QR para volver a conectar.",
+    dot: "bg-red-500",
+    text: "text-red-400",
+    icon: AlertTriangle,
+  },
+};
 
-export default function WhatsappBotPage() {
-  const [status, setStatus] = useState<WhatsappBotStatus>("DISCONNECTED");
-  const [qrText, setQrText] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [logs, setLogs] = useState<LogMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<"flow" | "templates">("flow");
-  const [selectedFlow, setSelectedFlow] = useState<"welcome" | "receipt" | "link">("welcome");
+/** Pasos para vincular el dispositivo desde el celular. */
+const PASOS_VINCULAR = [
+  "En tu celular abre WhatsApp y ve a Dispositivos vinculados.",
+  "Toca en Vincular dispositivo y escanea el QR de arriba.",
+  "Vuelve a esta página: el estado debe marcarte como Conectado.",
+];
 
-  const terminalEndRef = useRef<HTMLDivElement>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+export default function ChatBotPage() {
+  const { data, isLoading, isError, refetch, isFetching } = useBotStatus();
+  const cerrarSesion = useBotLogout();
+  const conectar = useBotConnect();
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
-  // Add system logs
-  const addLog = (
-    message: string,
-    source: LogMessage["source"] = "SYSTEM",
-    type: LogMessage["type"] = "info"
-  ) => {
-    const newLog: LogMessage = {
-      id: Math.random().toString(36).substring(2, 9),
-      time: new Date().toLocaleTimeString(),
-      source,
-      message,
-      type,
-    };
-    setLogs((prev) => [...prev.slice(-99), newLog]);
-  };
+  const status: BotStatus = data?.status ?? "DISCONNECTED";
+  const view = STATUS_VIEW[status];
+  const StatusIcon = view.icon;
+  const conectado = status === "CONNECTED";
 
-  // Fetch bot status
-  const fetchStatus = async (isFirst = false) => {
+  async function handleLogout() {
     try {
-      const data = await whatsappApi.getStatus();
-      setStatus(data.status);
-      setQrText(data.qr ?? null);
-      setErrorMessage(null);
-
-      if (isFirst) {
-        addLog(`Estado actual del bot: ${data.status}`, "SYSTEM", "info");
-        if (data.status === "QR_READY") {
-          addLog("Código QR listo para escaneo en el panel.", "BOT", "warn");
-        } else if (data.status === "CONNECTED") {
-          addLog("Bot de WhatsApp conectado y listo.", "BOT", "success");
-        }
-      }
+      await cerrarSesion.mutateAsync();
+      toast.success("Sesión cerrada. Escanea el QR para conectar de nuevo.");
+      setConfirmLogout(false);
     } catch (error: any) {
-      console.error(error);
-      setErrorMessage(
-        "No se pudo conectar con el servidor backend. Por favor, asegúrate de que el backend esté ejecutándose."
-      );
-      setStatus("DISCONNECTED");
-    } finally {
-      if (isFirst) setLoading(false);
+      toast.error(error?.message || "No se pudo cerrar la sesión");
     }
-  };
+  }
 
-  // Setup status polling
-  useEffect(() => {
-    fetchStatus(true);
-
-    pollingIntervalRef.current = setInterval(() => {
-      fetchStatus(false);
-    }, 4000);
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Scroll terminal logs to bottom
-  useEffect(() => {
-    if (terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [logs]);
-
-  // Simulate logs when connected
-  useEffect(() => {
-    if (status !== "CONNECTED") return;
-
-    // Initial logs when connected
-    const initialTimer = setTimeout(() => {
-      addLog("Estableciendo conexión persistente con WhatsApp Web...", "SYSTEM", "info");
-      addLog("Cargando base de datos de compradores activos...", "DATABASE", "info");
-    }, 1500);
-
-    // Periodic simulation of customer messages
-    const logInterval = setInterval(() => {
-      const names = ["María Soliz", "Juan Perez", "Carly Bernabe", "Rodrigo Gomez", "Alejandra Roca"];
-      const tiktoks = ["@maria_s", "@juanp_live", "@carly_b", "@rodrigo_gt", "@ale_roca"];
-      const orders = ["#1032", "#1033", "#1034", "#1035"];
-      const randomIdx = Math.floor(Math.random() * names.length);
-      const name = names[randomIdx];
-      const tiktok = tiktoks[randomIdx];
-      const order = orders[Math.floor(Math.random() * orders.length)];
-      const step = Math.floor(Math.random() * 3);
-
-      if (step === 0) {
-        addLog(`Mensaje recibido de comprador (${name}) solicitando estado de pedidos`, "BOT", "info");
-        addLog(`Enviando lista de compras pendientes para usuario de TikTok ${tiktok}`, "BOT", "success");
-      } else if (step === 1) {
-        addLog(`Foto de comprobante de pago recibida de ${name}`, "BOT", "info");
-        addLog(`Subiendo archivo de imagen a Cloudinary en segundo plano...`, "CLOUDINARY", "info");
-        setTimeout(() => {
-          addLog(`✅ Comprobante subido. URL generada en Cloudinary`, "CLOUDINARY", "success");
-          addLog(`Registrando comprobante asociado a orden ${order}`, "DATABASE", "success");
-          addLog(`Encolando tarea de validación OCR para orden ${order}`, "SYSTEM", "info");
-        }, 1200);
-      } else {
-        addLog(`Iniciando OCR para validar monto de orden ${order}`, "OCR", "info");
-        setTimeout(() => {
-          const success = Math.random() > 0.15;
-          if (success) {
-            addLog(`✅ OCR completo. Monto coincide con el total de la orden ${order}`, "OCR", "success");
-            addLog(`Actualizando estado de la orden ${order} a IN_REVIEW`, "DATABASE", "success");
-            addLog(`Notificando al comprador ${name} sobre recepción exitosa`, "BOT", "success");
-          } else {
-            addLog(`⚠️ OCR completo. Discrepancia menor detectada en orden ${order}`, "OCR", "warn");
-            addLog(`Orden ${order} marcada para revisión manual del administrador`, "DATABASE", "warn");
-          }
-        }, 1500);
-      }
-    }, 15000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(logInterval);
-    };
-  }, [status]);
-
-  // Bot commands
-  const handleStartBot = async () => {
-    setActionLoading(true);
-    addLog("Solicitando inicialización del Bot de WhatsApp al backend...", "SYSTEM", "info");
+  async function handleConnect() {
     try {
-      await whatsappApi.startBot();
-      setStatus("INITIALIZING");
-      addLog("Inicialización solicitada exitosamente.", "SYSTEM", "success");
-      addLog("Esperando respuesta del servicio de WhatsApp...", "BOT", "info");
-    } catch (err: any) {
-      addLog(`Error al iniciar el Bot: ${err.message}`, "SYSTEM", "error");
-    } finally {
-      setActionLoading(false);
-      fetchStatus();
+      await conectar.mutateAsync();
+      toast.success("Generando un nuevo código QR");
+    } catch (error: any) {
+      toast.error(error?.message || "No se pudo generar el QR");
     }
-  };
-
-  const handleStopBot = async () => {
-    setActionLoading(true);
-    addLog("Solicitando detención segura del Bot...", "SYSTEM", "info");
-    try {
-      await whatsappApi.stopBot();
-      setStatus("DISCONNECTED");
-      setQrText(null);
-      addLog("El bot ha sido detenido y la sesión de Puppeteer cerrada.", "SYSTEM", "success");
-    } catch (err: any) {
-      addLog(`Error al detener el Bot: ${err.message}`, "SYSTEM", "error");
-    } finally {
-      setActionLoading(false);
-      fetchStatus();
-    }
-  };
-
-  const handleRestartBot = async () => {
-    setActionLoading(true);
-    addLog("Solicitando reinicio del bot...", "SYSTEM", "info");
-    try {
-      await whatsappApi.restartBot();
-      setStatus("INITIALIZING");
-      setQrText(null);
-      addLog("Reinicio en proceso. Esperando re-conexión...", "SYSTEM", "success");
-    } catch (err: any) {
-      addLog(`Error al reiniciar el Bot: ${err.message}`, "SYSTEM", "error");
-    } finally {
-      setActionLoading(false);
-      fetchStatus();
-    }
-  };
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-3xl font-poppins font-bold text-brand-cyan tracking-wide flex items-center gap-3">
-            <MessageSquare className="text-brand-light" size={32} />
-            Administrador WhatsApp Bot
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Control de pasarela WhatsApp, vinculación automática de pedidos y procesamiento de comprobantes de pago.
-          </p>
-        </div>
+      <PageHeader
+        title="ChatBot"
+        subtitle="Vincula tu número de WhatsApp para que el bot atienda a tus compradores"
+      />
 
-        {/* Global Connection Badge */}
-        <div className="flex items-center gap-2 self-start rounded-full bg-brand-darkest/60 px-4 py-2 border border-brand-primary/20">
-          <div
-            className={`h-2.5 w-2.5 rounded-full ${
-              status === "CONNECTED"
-                ? "bg-emerald-500 animate-pulse"
-                : status === "QR_READY"
-                ? "bg-amber-500 animate-pulse"
-                : status === "INITIALIZING"
-                ? "bg-blue-400 animate-spin"
-                : "bg-rose-500"
-            }`}
-          />
-          <span className="font-poppins text-xs font-semibold uppercase tracking-wider text-slate-200">
-            {status === "CONNECTED"
-              ? "CONECTADO"
-              : status === "QR_READY"
-              ? "ESPERANDO QR"
-              : status === "INITIALIZING"
-              ? "INICIALIZANDO"
-              : "APAGADO"}
-          </span>
-        </div>
-      </div>
-
-      {errorMessage && (
-        <div className="flex items-center gap-3 rounded-lg border border-rose-500/20 bg-rose-500/10 p-4 text-rose-200">
-          <AlertCircle size={20} className="shrink-0 text-rose-400" />
-          <span className="text-sm">{errorMessage}</span>
-        </div>
-      )}
-
-      {/* Grid Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Column: Connection, Settings, Stats */}
-        <div className="space-y-6 lg:col-span-7">
-          {/* Card 1: Bot Connection Control */}
-          <div className="rounded-xl border border-brand-primary/20 bg-brand-dark p-6 relative overflow-hidden shadow-2xl">
-            {/* Background design accents */}
-            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-36 w-36 rounded-full bg-brand-primary/5 blur-3xl" />
-
-            <h2 className="text-lg font-poppins font-semibold text-slate-100 flex items-center gap-2 mb-4">
-              <Server className="text-brand-light" size={20} />
-              Control de Conexión del Bot
-            </h2>
-
-            {status === "DISCONNECTED" && (
-              <div className="space-y-5">
-                <div className="rounded-lg bg-brand-darkest/40 p-4 border border-brand-primary/10">
-                  <p className="text-sm text-slate-300">
-                    El bot de WhatsApp está actualmente **inactivo**. Al iniciarlo, el sistema abrirá un navegador virtual automatizado en el servidor para establecer la conexión con WhatsApp Web.
-                  </p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-slate-400">
-                    <li className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
-                      Procesa mensajes las 24 horas del día.
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
-                      Extrae automáticamente datos de comprobantes mediante OCR.
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
-                      Vincula cuentas de TikTok ingresadas por mensaje privado.
-                    </li>
-                  </ul>
-                </div>
-
-                <button
-                  onClick={handleStartBot}
-                  disabled={actionLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-primary hover:bg-brand-primary/80 disabled:bg-slate-700 text-white font-poppins font-medium py-3 px-4 transition-colors"
-                >
-                  {actionLoading ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Play size={18} />
+      {/* Estado principal */}
+      <Card
+        className={cn(
+          "border-2",
+          conectado && "border-emerald-500/40",
+          status === "QR_READY" && "border-amber-500/40",
+          status === "INITIALIZING" && "border-blue-500/40",
+          (status === "DISCONNECTED" || isError) && "border-red-500/40"
+        )}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div
+              className={cn(
+                "rounded-full p-3",
+                conectado && "bg-emerald-500/10",
+                status === "QR_READY" && "bg-amber-500/10",
+                status === "INITIALIZING" && "bg-blue-500/10",
+                (status === "DISCONNECTED" || isError) && "bg-red-500/10"
+              )}
+            >
+              <StatusIcon
+                size={28}
+                className={cn(
+                  view.text,
+                  status === "INITIALIZING" && "animate-spin"
+                )}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "h-3 w-3 rounded-full",
+                    view.dot,
+                    conectado && "animate-pulse"
                   )}
-                  Iniciar Bot de WhatsApp
-                </button>
+                />
+                <p className="font-poppins text-xl font-bold text-slate-100">
+                  {isError ? "Bot no disponible" : view.label}
+                </p>
               </div>
-            )}
-
-            {status === "INITIALIZING" && (
-              <div className="space-y-5 text-center py-6">
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <div className="h-16 w-16 rounded-full border-4 border-brand-primary/20 border-t-brand-cyan animate-spin" />
-                    <Loader2 size={24} className="absolute inset-0 m-auto text-brand-cyan animate-pulse" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-brand-light font-poppins text-sm font-semibold">Inicializando Servidor...</h3>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                    Esto puede tomar de 15 a 45 segundos. Estamos preparando la sesión Puppeteer y los controladores necesarios para WhatsApp Web.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {status === "QR_READY" && (
-              <div className="space-y-5">
-                <div className="rounded-lg bg-amber-500/5 p-4 border border-amber-500/20 text-center">
-                  <p className="text-sm text-amber-200 font-medium">
-                    ⚠️ Se requiere escaneo de código QR
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Abre la aplicación de WhatsApp en tu teléfono, ve a **Dispositivos Vinculados** y escanea el código que aparece abajo.
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-center justify-center bg-white p-6 rounded-xl border-4 border-brand-cyan shadow-xl mx-auto max-w-[280px]">
-                  {qrText ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                        qrText
-                      )}`}
-                      alt="WhatsApp Bot QR"
-                      width={200}
-                      height={200}
-                      className="rounded"
-                    />
-                  ) : (
-                    <div className="h-[200px] w-[200px] bg-slate-100 flex items-center justify-center text-slate-400">
-                      <Loader2 className="animate-spin text-brand-dark" size={32} />
-                    </div>
-                  )}
-                  <span className="text-[10px] text-slate-500 mt-3 font-mono break-all line-clamp-1 max-w-full">
-                    {qrText}
-                  </span>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleStopBot}
-                    disabled={actionLoading}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-brand-primary/30 hover:bg-brand-primary/10 text-slate-300 font-poppins text-sm py-2.5 transition-colors"
-                  >
-                    <Square size={16} />
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleRestartBot}
-                    disabled={actionLoading}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-brand-primary hover:bg-brand-primary/80 text-white font-poppins text-sm py-2.5 transition-colors"
-                  >
-                    <RefreshCw size={16} />
-                    Re-generar QR
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {status === "CONNECTED" && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-4 rounded-lg bg-emerald-500/10 p-4 border border-emerald-500/20 text-emerald-200">
-                  <div className="rounded-full bg-emerald-500/20 p-2 text-emerald-400">
-                    <CheckCircle size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-poppins font-semibold text-sm">Bot en Línea</h3>
-                    <p className="text-xs text-slate-300 mt-0.5">
-                      Conexión activa con WhatsApp Web. El bot está respondiendo mensajes automáticamente.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Connection detail list */}
-                <div className="grid grid-cols-2 gap-3 text-xs rounded-lg bg-brand-darkest/40 p-4 border border-brand-primary/10">
-                  <div>
-                    <span className="text-slate-400 block font-light">Estrategia Auth</span>
-                    <span className="text-slate-200 font-semibold font-mono">LocalAuth (.wwebjs_auth)</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-light">Navegador</span>
-                    <span className="text-slate-200 font-semibold font-mono">Chromium Headless</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-light">Conexión</span>
-                    <span className="text-slate-200 font-semibold text-brand-cyan">WebSocket Express</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-light">Última Actividad</span>
-                    <span className="text-slate-200 font-semibold font-mono">Hace un momento</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleStopBot}
-                    disabled={actionLoading}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-poppins text-sm py-3 transition-colors"
-                  >
-                    <Square size={16} />
-                    Apagar Bot
-                  </button>
-                  <button
-                    onClick={handleRestartBot}
-                    disabled={actionLoading}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-brand-primary/30 hover:bg-brand-primary/10 text-slate-300 font-poppins text-sm py-3 transition-colors animate-pulse"
-                  >
-                    <RefreshCw size={16} />
-                    Reiniciar
-                  </button>
-                </div>
-              </div>
-            )}
+              <p className="mt-1 max-w-md text-sm text-slate-400">
+                {isError
+                  ? "No pudimos comunicarnos con el bot. Verifica que esté ejecutándose."
+                  : view.description}
+              </p>
+            </div>
           </div>
 
-          {/* Card 2: Terminal Console */}
-          <div className="rounded-xl border border-brand-primary/20 bg-black/90 p-5 shadow-2xl font-mono text-xs flex flex-col h-[340px]">
-            <div className="flex items-center justify-between pb-3 border-b border-brand-primary/20 text-slate-400">
-              <span className="flex items-center gap-2 font-poppins text-slate-200 font-medium">
-                <Terminal className="text-brand-cyan" size={16} />
-                Terminal Logs del Bot
-              </span>
-              <button
-                onClick={() => setLogs([])}
-                className="hover:text-slate-200 px-2 py-0.5 rounded border border-slate-700 hover:border-slate-500 transition-colors"
-              >
-                Limpiar
-              </button>
-            </div>
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="shrink-0"
+          >
+            <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+            Actualizar
+          </Button>
+        </div>
+      </Card>
 
-            <div className="flex-1 overflow-y-auto space-y-2 py-3 pr-2 scrollbar-thin">
-              {logs.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-slate-500 italic text-[11px] font-sans">
-                  No hay registros actuales. Activa el bot para inicializar la terminal.
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Código QR */}
+        <Card>
+          <CardHeader
+            title="Vincular dispositivo"
+            subtitle="Escanea el QR desde tu celular para conectar el bot"
+          />
+          <CardContent>
+            {isLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 size={28} className="animate-spin text-brand-cyan" />
+              </div>
+            ) : status === "QR_READY" && data?.qr ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-xl border-4 border-brand-cyan bg-white p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+                      data.qr
+                    )}`}
+                    alt="Código QR de WhatsApp"
+                    width={240}
+                    height={240}
+                  />
+                </div>
+                <p className="text-center text-xs text-slate-400">
+                  Escanealo ahora: el código caduca en pocos segundos.
+                </p>
+              </div>
+            ) : conectado ? (
+              <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
+                <CheckCircle2 size={40} className="text-emerald-400" />
+                <p className="text-sm text-slate-300">
+                  Tu dispositivo ya está vinculado.
+                </p>
+                <p className="text-xs text-slate-400">
+                  No necesitas escanear nada más mientras la sesión siga activa.
+                </p>
+              </div>
+            ) : status === "INITIALIZING" ? (
+              <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
+                <Loader2 size={36} className="animate-spin text-blue-400" />
+                <p className="text-sm text-slate-300">Generando el código QR</p>
+                <p className="text-xs text-slate-400">
+                  El QR aparecerá aquí en unos segundos.
+                </p>
+              </div>
+            ) : (
+              <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
+                {isError ? (
+                  <ServerCrash size={40} className="text-slate-600" />
+                ) : (
+                  <PlugZap size={40} className="text-slate-600" />
+                )}
+                <p className="text-sm text-slate-300">
+                  {isError
+                    ? "No hay ningún bot conectado"
+                    : "No hay un código QR disponible"}
+                </p>
+                <p className="max-w-xs text-xs text-slate-400">
+                  {isError
+                    ? "Inicia el bot en su terminal y presiona el botón para generar el QR."
+                    : "Pide un nuevo código QR para vincular tu número."}
+                </p>
+                <Button
+                  variant="primary"
+                  onClick={handleConnect}
+                  disabled={conectar.isPending}
+                >
+                  {conectar.isPending ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <RefreshCw size={16} />
+                  )}
+                  {isError ? "Reintentar" : "Generar QR"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Acciones y pasos */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader
+              title="Cerrar sesión de WhatsApp"
+              subtitle="Desvincula el dispositivo de este bot"
+            />
+            <CardContent className="space-y-4">
+              <p className="text-sm text-slate-400">
+                Al cerrar sesión el bot dejará de responder mensajes y generates un
+                QR nuevo para volver a conectarlo.
+              </p>
+
+              {confirmLogout ? (
+                <div className="space-y-3 rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+                  <p className="text-sm font-medium text-red-300">
+                    ¿Seguro que quieres cerrar la sesión?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="danger"
+                      className="flex-1"
+                      onClick={handleLogout}
+                      disabled={cerrarSesion.isPending}
+                    >
+                      {cerrarSesion.isPending ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <LogOut size={16} />
+                      )}
+                      Sí, cerrar sesión
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setConfirmLogout(false)}
+                      disabled={cerrarSesion.isPending}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                logs.map((log) => {
-                  let colorClass = "text-slate-300";
-                  if (log.type === "success") colorClass = "text-emerald-400";
-                  if (log.type === "warn") colorClass = "text-amber-400";
-                  if (log.type === "error") colorClass = "text-rose-400";
-
-                  let sourceColor = "text-brand-cyan";
-                  if (log.source === "DATABASE") sourceColor = "text-indigo-400";
-                  if (log.source === "OCR") sourceColor = "text-teal-300";
-                  if (log.source === "CLOUDINARY") sourceColor = "text-purple-400";
-
-                  return (
-                    <div key={log.id} className="leading-5">
-                      <span className="text-slate-500">[{log.time}]</span>{" "}
-                      <span className={`font-semibold ${sourceColor}`}>[{log.source}]</span>{" "}
-                      <span className={colorClass}>{log.message}</span>
-                    </div>
-                  );
-                })
+                <Button
+                  variant="danger"
+                  className="w-full"
+                  onClick={() => setConfirmLogout(true)}
+                  disabled={!conectado}
+                >
+                  <LogOut size={16} />
+                  Cerrar sesión de WhatsApp
+                </Button>
               )}
-              <div ref={terminalEndRef} />
-            </div>
-          </div>
-        </div>
 
-        {/* Right Column: Simulator and flow preview */}
-        <div className="space-y-6 lg:col-span-5">
-          {/* Card: Chat Simulation */}
-          <div className="rounded-xl border border-brand-primary/20 bg-brand-dark p-6 shadow-2xl flex flex-col items-center">
-            <div className="w-full border-b border-brand-primary/10 pb-4 mb-5 flex justify-between items-center">
-              <h2 className="text-lg font-poppins font-semibold text-slate-100 flex items-center gap-2">
-                <Smartphone className="text-brand-light" size={20} />
-                Simulador del Chat
-              </h2>
+              {!conectado && !confirmLogout && (
+                <p className="text-xs text-slate-500">
+                  Solo puedes cerrar sesión si el bot está conectado.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-              {/* Selector de Pestaña */}
-              <div className="flex bg-brand-darkest/60 p-1 rounded-lg border border-brand-primary/10 text-xs font-poppins">
-                <button
-                  onClick={() => setActiveTab("flow")}
-                  className={`px-3 py-1 rounded-md transition-colors ${
-                    activeTab === "flow" ? "bg-brand-primary text-white" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Flujos
-                </button>
-                <button
-                  onClick={() => setActiveTab("templates")}
-                  className={`px-3 py-1 rounded-md transition-colors ${
-                    activeTab === "templates" ? "bg-brand-primary text-white" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Mensajes
-                </button>
-              </div>
-            </div>
-
-            {/* Smart Phone Simulator */}
-            <div className="w-full max-w-[310px] aspect-[9/18] rounded-[36px] bg-slate-900 border-8 border-slate-700/80 p-2.5 shadow-2xl flex flex-col justify-between relative overflow-hidden ring-4 ring-brand-primary/10">
-              {/* Phone Camera Notch */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-4 rounded-full bg-slate-900 z-20 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-slate-800" />
-              </div>
-
-              {/* Phone Header */}
-              <div className="bg-[#075E54] -mx-2.5 -mt-2.5 px-4 pt-6 pb-2.5 flex items-center gap-2 text-white border-b border-[#128C7E]">
-                <div className="h-8 w-8 rounded-full bg-[#128C7E] flex items-center justify-center font-bold text-xs uppercase font-poppins">
-                  TB
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold leading-tight">TikTok Sales Bot</h4>
-                  <span className="text-[9px] text-[#25D366] font-medium tracking-wide animate-pulse">
-                    En línea
-                  </span>
-                </div>
-              </div>
-
-              {/* Chat Body */}
-              <div className="flex-1 bg-[#ECE5DD] -mx-2.5 p-3 overflow-y-auto space-y-2.5 text-xs text-slate-800 scrollbar-none font-sans">
-                {activeTab === "flow" ? (
-                  /* SIMULACION DE FLUJOS */
-                  <>
-                    {selectedFlow === "welcome" && (
-                      <>
-                        <div className="bg-white rounded-lg p-2.5 max-w-[85%] self-start shadow-sm border border-slate-200 rounded-tl-none">
-                          <p className="leading-relaxed">Hola, quiero pagar mi pedido.</p>
-                          <span className="text-[8px] text-slate-400 block text-right mt-1">14:02</span>
-                        </div>
-                        <div className="bg-[#DCF8C6] rounded-lg p-2.5 max-w-[85%] ml-auto shadow-sm border border-slate-200 rounded-tr-none">
-                          <p className="leading-relaxed font-semibold text-brand-darkest mb-1">
-                            ¡Hola Carly Bernabe! 🌟
-                          </p>
-                          <p className="leading-relaxed">Tienes los siguientes pedidos pendientes:</p>
-                          <p className="leading-relaxed mt-1 font-bold text-slate-700">
-                            Pedido #1024
-                          </p>
-                          <p className="leading-relaxed text-[11px] text-slate-600 pl-1.5">
-                            - 1x Auriculares RGB (Bs. 120)
-                          </p>
-                          <p className="leading-relaxed text-[11px] font-semibold mt-1">
-                            Total: Bs. 120.00
-                          </p>
-                          <span className="text-[8px] text-slate-400 block text-right mt-1">14:02</span>
-                        </div>
-                      </>
-                    )}
-
-                    {selectedFlow === "receipt" && (
-                      <>
-                        <div className="bg-white rounded-lg p-2 max-w-[85%] self-start shadow-sm border border-slate-200 rounded-tl-none space-y-1">
-                          <div className="bg-slate-200 h-24 rounded flex items-center justify-center text-slate-400">
-                            <ImageIcon size={28} />
-                          </div>
-                          <span className="text-[8px] text-slate-400 block text-right">14:05</span>
-                        </div>
-                        <div className="bg-[#DCF8C6] rounded-lg p-2.5 max-w-[85%] ml-auto shadow-sm border border-slate-200 rounded-tr-none">
-                          <p className="leading-relaxed">
-                            Procesando tu comprobante de pago... Un momento por favor. ⏳
-                          </p>
-                          <span className="text-[8px] text-slate-400 block text-right mt-1">14:05</span>
-                        </div>
-                        <div className="bg-[#DCF8C6] rounded-lg p-2.5 max-w-[85%] ml-auto shadow-sm border border-slate-200 rounded-tr-none">
-                          <p className="leading-relaxed">
-                            ✅ Comprobante recibido y asociado al pedido *#1024*.
-                          </p>
-                          <p className="leading-relaxed mt-1">
-                            Estamos validando el monto de *Bs. 120.00*. Te avisaremos cuando se confirme el pago. 🌟
-                          </p>
-                          <span className="text-[8px] text-slate-400 block text-right mt-1">14:06</span>
-                        </div>
-                      </>
-                    )}
-
-                    {selectedFlow === "link" && (
-                      <>
-                        <div className="bg-white rounded-lg p-2 max-w-[85%] self-start shadow-sm border border-slate-200 rounded-tl-none">
-                          <p className="leading-relaxed">Mi usuario de tiktok es @carly_b</p>
-                          <span className="text-[8px] text-slate-400 block text-right mt-1">14:10</span>
-                        </div>
-                        <div className="bg-[#DCF8C6] rounded-lg p-2.5 max-w-[85%] ml-auto shadow-sm border border-slate-200 rounded-tr-none">
-                          <p className="leading-relaxed">
-                            ¡Vínculo exitoso! Encontré el pedido *#1024* pendiente y procederé a vincular el comprobante que enviaste antes... ⏳
-                          </p>
-                          <span className="text-[8px] text-slate-400 block text-right mt-1">14:10</span>
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  /* RESPUESTAS ESTATICA DEL BOT */
-                  <div className="space-y-3 font-sans">
-                    <div className="bg-slate-300/30 rounded border border-slate-300 p-2 text-[10px] leading-relaxed">
-                      <span className="font-semibold block text-slate-700">Bienvenida:</span>
-                      ¡Hola *{"{comprador}"}*! Bienvenido al asistente de pagos de TikTok Live Sales. 🌟
-                    </div>
-                    <div className="bg-slate-300/30 rounded border border-slate-300 p-2 text-[10px] leading-relaxed">
-                      <span className="font-semibold block text-slate-700">Comprobante Recibido:</span>
-                      ✅ Comprobante recibido y asociado al pedido *#{"{id}"}*. Estamos validando el monto de *Bs. {"{monto}"}*.
-                    </div>
-                    <div className="bg-slate-300/30 rounded border border-slate-300 p-2 text-[10px] leading-relaxed">
-                      <span className="font-semibold block text-slate-700">No Registrado:</span>
-                      ¡Hola! Recibí tu imagen de comprobante, pero tu número de WhatsApp no está registrado. ❌ Por favor envíame tu usuario de TikTok precedido de un &apos;@&apos;.
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Phone Footer */}
-              <div className="bg-[#F0F0F0] -mx-2.5 -mb-2.5 p-2 flex items-center gap-2 border-t border-slate-200">
-                <input
-                  type="text"
-                  placeholder="Escribe un mensaje"
-                  disabled
-                  className="flex-1 bg-white rounded-full px-3 py-1.5 text-[11px] outline-none border border-slate-200 text-slate-400 font-sans"
-                />
-                <button disabled className="h-7 w-7 rounded-full bg-[#128C7E] flex items-center justify-center text-white shrink-0">
-                  <Send size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Simulación Flow Toggles */}
-            {activeTab === "flow" && (
-              <div className="w-full mt-4 flex gap-1.5 justify-center">
-                <button
-                  onClick={() => setSelectedFlow("welcome")}
-                  className={`px-2.5 py-1 text-[11px] rounded-full font-poppins border transition-colors ${
-                    selectedFlow === "welcome"
-                      ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan"
-                      : "border-slate-700 hover:border-slate-500 text-slate-400"
-                  }`}
-                >
-                  Mensaje Inicial
-                </button>
-                <button
-                  onClick={() => setSelectedFlow("receipt")}
-                  className={`px-2.5 py-1 text-[11px] rounded-full font-poppins border transition-colors ${
-                    selectedFlow === "receipt"
-                      ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan"
-                      : "border-slate-700 hover:border-slate-500 text-slate-400"
-                  }`}
-                >
-                  Comprobante
-                </button>
-                <button
-                  onClick={() => setSelectedFlow("link")}
-                  className={`px-2.5 py-1 text-[11px] rounded-full font-poppins border transition-colors ${
-                    selectedFlow === "link"
-                      ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan"
-                      : "border-slate-700 hover:border-slate-500 text-slate-400"
-                  }`}
-                >
-                  Vincular TikTok
-                </button>
-              </div>
-            )}
-          </div>
+          <Card>
+            <CardHeader
+              title="Cómo conectar tu WhatsApp"
+              subtitle="Solo la primera vez"
+            />
+            <CardContent>
+              <ol className="space-y-3">
+                {PASOS_VINCULAR.map((paso, index) => (
+                  <li key={paso} className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-semibold text-brand-cyan">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm text-slate-300">{paso}</span>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Requisito para transmitir */}
+      {!conectado && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Smartphone
+                size={20}
+                className="mt-0.5 shrink-0 text-amber-400"
+              />
+              <div>
+                <p className="text-sm font-medium text-amber-200">
+                  No puedes iniciar una transmisión todavía
+                </p>
+                <p className="mt-0.5 text-xs text-amber-200/70">
+                  El bot necesita estar conectado para confirmar las reservas y
+                  los pagos de tus clientes.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="shrink-0 border-amber-500/40 text-amber-300"
+              onClick={handleConnect}
+              disabled={conectar.isPending}
+            >
+              Ir a ChatBot
+              <ArrowRight size={16} />
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

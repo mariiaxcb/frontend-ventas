@@ -3,23 +3,21 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
   Radio,
   Package,
   ClipboardList,
   BarChart3,
-  MessageSquare,
+  Bot,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/lib/constants'
 
 const items = [
-  { href: ROUTES.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-  { href: ROUTES.LIVE, label: 'Transmision', icon: Radio },
   { href: ROUTES.PRODUCTS, label: 'Productos', icon: Package },
+  { href: ROUTES.LIVE, label: 'Transmision', icon: Radio },
   { href: ROUTES.ORDERS, label: 'Pedidos', icon: ClipboardList },
   { href: ROUTES.REPORTS, label: 'Reportes', icon: BarChart3 },
-  { href: ROUTES.WHATSAPP, label: 'WhatsApp ', icon: MessageSquare },
+  { href: ROUTES.WHATSAPP, label: 'ChatBot', icon: Bot },
 ]
 
 export function Sidebar() {
