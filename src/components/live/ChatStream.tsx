@@ -5,11 +5,10 @@ import type { ChatMensajeEvento } from "@/types/socket";
 
 interface ChatStreamProps {
   comentarios?: any[];
-  onPostular?: (mensaje: ChatMensajeEvento) => void;
   onUpdateCount?: (count: number) => void;
 }
 
-export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
+export function ChatStream({ comentarios = [] }: ChatStreamProps) {
   const mensajes: ChatMensajeEvento[] = comentarios.map((c) => {
     // Priorizar Nickname si no es anónimo
     const nombreAMostrar =
@@ -49,7 +48,7 @@ export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
             return (
               <div
                 key={uniqueKey}
-                className="group flex items-center justify-between rounded p-1.5 transition-colors hover:bg-slate-800/50"
+                className="flex items-center justify-between rounded p-1.5 transition-colors hover:bg-slate-800/50"
               >
                 <div className="text-sm font-inter pr-2">
                   <span className="font-semibold text-brand-cyan font-poppins">
@@ -57,16 +56,6 @@ export function ChatStream({ comentarios = [], onPostular }: ChatStreamProps) {
                   </span>
                   <span className="text-slate-200">{m.mensaje}</span>
                 </div>
-
-                {onPostular && (
-                  <button
-                    type="button"
-                    onClick={() => onPostular(m)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-cyan-500/20 hover:bg-cyan-500/30 text-brand-cyan text-xs px-2 py-1 rounded font-poppins font-medium cursor-pointer"
-                  >
-                    Postular
-                  </button>
-                )}
               </div>
             );
           })
