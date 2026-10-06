@@ -59,7 +59,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-darkest px-4 text-slate-100">
-      <div className="w-full max-w-sm rounded-lg border border-brand-primary/20 bg-brand-dark p-8 shadow-xl">
+      <div className="w-full max-w-sm rounded-lg border border-surface-border bg-brand-dark p-8 shadow-xl">
         <h1 className="mb-2 text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
           Sistema de Ventas
         </h1>
@@ -81,7 +81,7 @@ export default function LoginPage() {
             error={errors.password?.message}
             {...register('password')}
           />
-          {error && <p className="text-sm font-inter text-red-400">{error}</p>}
+          {error && <p className="text-sm font-inter text-estado-rechazado">{error}</p>}
           <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
             {isSubmitting ? 'Iniciando sesión…' : 'Ingresar'}
           </Button>

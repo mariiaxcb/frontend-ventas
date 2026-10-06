@@ -1,45 +1,33 @@
 import { apiClient } from "./api.client";
 
-export type WhatsappBotStatus = "DISCONNECTED" | "INITIALIZING" | "QR_READY" | "CONNECTED";
+export type WhatsappBotStatus = "CONNECTED" | "DISCONNECTED" | "QR_READY" | "INITIALIZING";
 
-export interface WhatsappStatusResponse {
+export interface BotStatusResponse {
   status: WhatsappBotStatus;
-  qr: string | null;
+  qr?: string;
 }
 
 export interface ApiResponse<T> {
   success: boolean;
-  data?: T;
-  message?: string;
+  message: string;
+  data: T;
 }
 
 export const whatsappApi = {
-  getStatus: async (): Promise<WhatsappStatusResponse> => {
-    const { data } = await apiClient.get<ApiResponse<WhatsappStatusResponse>>("/whatsapp/status");
-    if (!data.success || !data.data) {
-      throw new Error(data.message || "Error al obtener el estado de WhatsApp");
-    }
-    return data.data;
+  getStatus: async (): Promise<BotStatusResponse> => {
+    const response = await apiClient.get<ApiResponse<BotStatusResponse>>("/whatsapp/status");
+    return response.data.data;
   },
 
   startBot: async (): Promise<void> => {
-    const { data } = await apiClient.post<ApiResponse<null>>("/whatsapp/start");
-    if (!data.success) {
-      throw new Error(data.message || "Error al iniciar el bot de WhatsApp");
-    }
+    await apiClient.post("/whatsapp/start");
   },
 
   stopBot: async (): Promise<void> => {
-    const { data } = await apiClient.post<ApiResponse<null>>("/whatsapp/stop");
-    if (!data.success) {
-      throw new Error(data.message || "Error al detener el bot de WhatsApp");
-    }
+    await apiClient.post("/whatsapp/stop");
   },
 
   restartBot: async (): Promise<void> => {
-    const { data } = await apiClient.post<ApiResponse<null>>("/whatsapp/restart");
-    if (!data.success) {
-      throw new Error(data.message || "Error al reiniciar el bot de WhatsApp");
-    }
+    await apiClient.post("/whatsapp/restart");
   },
 };

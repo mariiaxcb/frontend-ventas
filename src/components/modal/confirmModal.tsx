@@ -23,27 +23,27 @@ const variantStyles: Record<
   { iconBg: string; iconColor: string; buttonBg: string; defaultIcon: LucideIcon }
 > = {
   danger: {
-    iconBg: "bg-red-950/50 border-red-900/50",
-    iconColor: "text-red-400",
-    buttonBg: "bg-red-600 hover:bg-red-700 text-white",
+    iconBg: "bg-estado-rechazado/10 border-estado-rechazado/30",
+    iconColor: "text-estado-rechazado",
+    buttonBg: "bg-estado-rechazado hover:bg-red-600 text-slate-100",
     defaultIcon: AlertTriangle,
   },
   warning: {
-    iconBg: "bg-amber-950/50 border-amber-900/50",
-    iconColor: "text-amber-400",
-    buttonBg: "bg-amber-600 hover:bg-amber-700 text-white",
+    iconBg: "bg-estado-pendiente/10 border-estado-pendiente/30",
+    iconColor: "text-estado-pendiente",
+    buttonBg: "bg-estado-pendiente hover:bg-amber-500 text-slate-100",
     defaultIcon: AlertTriangle,
   },
   info: {
-    iconBg: "bg-cyan-950/50 border-cyan-900/50",
-    iconColor: "text-brand-cyan",
-    buttonBg: "bg-brand-cyan hover:bg-cyan-500 text-slate-950 font-semibold",
+    iconBg: "bg-brand-primary/15 border-brand-primary/30",
+    iconColor: "text-brand-light",
+    buttonBg: "bg-brand-primary hover:bg-brand-light text-slate-100 font-semibold",
     defaultIcon: Info,
   },
   success: {
-    iconBg: "bg-emerald-950/50 border-emerald-900/50",
-    iconColor: "text-emerald-400",
-    buttonBg: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    iconBg: "bg-estado-validado/10 border-estado-validado/30",
+    iconColor: "text-estado-validado",
+    buttonBg: "bg-estado-validado hover:bg-emerald-500 text-slate-100",
     defaultIcon: CheckCircle,
   },
 };
@@ -67,17 +67,17 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div className="bg-brand-dark border border-surface-border rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
         <div className="flex items-center gap-3">
           <div className={`p-2 border rounded-lg ${style.iconBg} ${style.iconColor}`}>
             <IconComponent size={24} />
           </div>
-          <h2 className="text-lg font-bold text-white font-poppins">{title}</h2>
+          <h2 className="text-lg font-bold text-slate-100 font-poppins">{title}</h2>
         </div>
 
-        <div className="text-xs text-gray-300 leading-relaxed">{description}</div>
+        <div className="text-xs text-slate-300 leading-relaxed">{description}</div>
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+        <div className="flex justify-end gap-3 pt-3 border-t border-surface-border">
           <Button
             type="button"
             variant="outline"

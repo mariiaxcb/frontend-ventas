@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-brand-primary/20 bg-brand-dark shadow-sm">
-      <table className="min-w-full divide-y divide-brand-primary/20 text-sm">
+    <div className="overflow-x-auto rounded-lg border border-surface-border bg-brand-dark shadow-sm">
+      <table className="min-w-full divide-y divide-surface-border text-sm">
         {children}
       </table>
     </div>
@@ -16,11 +16,11 @@ export function TableHead({ children }: { children: ReactNode }) {
 }
 
 export function TableBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-brand-primary/10 bg-brand-dark">{children}</tbody>;
+  return <tbody className="divide-y divide-surface-border/60 bg-brand-dark">{children}</tbody>;
 }
 
 export function TableRow({ children, className }: { children: ReactNode; className?: string }) {
-  return <tr className={cn("hover:bg-brand-primary/10 transition-colors", className)}>{children}</tr>;
+  return <tr className={cn("hover:bg-brand-primary/15 transition-colors", className)}>{children}</tr>;
 }
 
 export function TableHeadCell({ children }: { children: ReactNode }) {

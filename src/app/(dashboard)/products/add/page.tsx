@@ -114,11 +114,11 @@ export default function NuevoProductoPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4"
+        className="bg-brand-dark border border-surface-border p-6 rounded-xl space-y-4"
       >
         {/* INPUT CÓDIGO DE PRODUCTO CON VALIDACIÓN EN TIEMPO REAL */}
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Código del Producto</label>
+          <label className="text-xs text-slate-400 mb-1 block">Código del Producto</label>
           <div className="relative">
             <Input
               placeholder="Ej. PROD-001"
@@ -127,7 +127,7 @@ export default function NuevoProductoPage() {
               required
               className={
                 codigoExiste
-                  ? "border-red-500 focus:ring-red-500"
+                  ? "border-estado-rechazado focus:ring-estado-rechazado/20"
                   : codigoValido
                   ? "border-green-500 focus:ring-green-500"
                   : ""
@@ -135,19 +135,19 @@ export default function NuevoProductoPage() {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
               {validandoCodigo && (
-                <Loader2 size={18} className="animate-spin text-gray-400" />
+                <Loader2 size={18} className="animate-spin text-slate-400" />
               )}
               {!validandoCodigo && codigoValido && (
                 <CheckCircle2 size={18} className="text-green-500" />
               )}
               {!validandoCodigo && codigoExiste && (
-                <AlertCircle size={18} className="text-red-500" />
+                <AlertCircle size={18} className="text-estado-rechazado" />
               )}
             </div>
           </div>
 
           {codigoExiste && (
-            <p className="text-xs mt-1 text-red-400">El código ya está en uso.</p>
+            <p className="text-xs mt-1 text-estado-rechazado">El código ya está en uso.</p>
           )}
           {codigoValido && (
             <p className="text-xs mt-1 text-green-400">Código disponible.</p>
@@ -155,7 +155,7 @@ export default function NuevoProductoPage() {
         </div>
 
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Nombre</label>
+          <label className="text-xs text-slate-400 mb-1 block">Nombre</label>
           <Input
             placeholder="Ej. Silla Gamer"
             value={nombre}
@@ -166,7 +166,7 @@ export default function NuevoProductoPage() {
 
         {/* CAMPO CATEGORÍA */}
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">
+          <label className="text-xs text-slate-400 mb-1 block">
             {esNuevaCategoria ? "Escribir Nueva Categoría" : "Categoría"}
           </label>
 
@@ -183,7 +183,7 @@ export default function NuevoProductoPage() {
                 value={categoriaSeleccionada}
                 onChange={(e) => setCategoriaSeleccionada(e.target.value)}
                 required
-                className="w-full bg-slate-950 border border-slate-800 text-white rounded-md p-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-cyan"
+                className="w-full bg-brand-raised border border-surface-border text-slate-100 rounded-md p-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-cyan"
               >
                 <option value="" disabled>
                   {cargandoCategorias
@@ -216,7 +216,7 @@ export default function NuevoProductoPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Precio</label>
+            <label className="text-xs text-slate-400 mb-1 block">Precio</label>
             <Input
               type="number"
               step="0.01"
@@ -229,7 +229,7 @@ export default function NuevoProductoPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Stock</label>
+            <label className="text-xs text-slate-400 mb-1 block">Stock</label>
             <Input
               type="number"
               placeholder="0"
@@ -244,7 +244,7 @@ export default function NuevoProductoPage() {
 
         {/* CARGA DE ARCHIVO DE IMAGEN */}
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">
+          <label className="text-xs text-slate-400 mb-1 block">
             Imagen del Producto
           </label>
           <input
@@ -257,7 +257,7 @@ export default function NuevoProductoPage() {
 
           <div
             onClick={handleSeleccionarArchivo}
-            className="w-full h-36 border-2 border-dashed border-slate-800 hover:border-brand-cyan rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-950/50 hover:bg-slate-950 relative overflow-hidden"
+            className="w-full h-36 border-2 border-dashed border-surface-border hover:border-brand-cyan rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all bg-brand-darkest/60 hover:bg-brand-raised relative overflow-hidden"
           >
             {imagenPreview ? (
               <div className="relative w-full h-full">
@@ -269,18 +269,18 @@ export default function NuevoProductoPage() {
                 <button
                   type="button"
                   onClick={handleRemoverImagen}
-                  className="absolute top-2 right-2 bg-red-600/80 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                  className="absolute top-2 right-2 bg-estado-rechazado/80 text-slate-100 p-1 rounded-full hover:bg-estado-rechazado transition-colors"
                 >
                   <X size={16} />
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 text-gray-400 hover:text-brand-cyan transition-colors">
+              <div className="flex flex-col items-center gap-2 text-slate-400 hover:text-brand-cyan transition-colors">
                 <Upload size={28} />
                 <span className="text-xs font-medium">
                   Haz clic para examinar y subir una imagen
                 </span>
-                <span className="text-[10px] text-gray-500">
+                <span className="text-[10px] text-slate-500">
                   PNG, JPG, WEBP, SVG
                 </span>
               </div>
@@ -289,9 +289,9 @@ export default function NuevoProductoPage() {
         </div>
 
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Descripción</label>
+          <label className="text-xs text-slate-400 mb-1 block">Descripción</label>
           <textarea
-            className="w-full bg-slate-950 border border-slate-800 text-white rounded-md p-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-cyan"
+            className="w-full bg-brand-raised border border-surface-border text-slate-100 rounded-md p-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-cyan"
             rows={4}
             placeholder="Detalles sobre el producto..."
             value={descripcion}
@@ -299,7 +299,7 @@ export default function NuevoProductoPage() {
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-surface-border">
           <Button type="button" variant="ghost" onClick={() => router.back()}>
             Cancelar
           </Button>

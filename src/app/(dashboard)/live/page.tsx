@@ -41,7 +41,7 @@ export default function HistorialLivePage() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-surface-border pb-4">
         <div>
           <h1 className="text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
             Historial de Transmisiones
@@ -54,7 +54,7 @@ export default function HistorialLivePage() {
 
         <Link
           href="/live/transition-live"
-          className="px-4 py-2 text-xs font-semibold text-white bg-brand-cyan hover:bg-cyan-600 rounded-lg transition-all text-center"
+          className="px-4 py-2 text-xs font-semibold text-slate-100 bg-brand-cyan hover:bg-emerald-400 rounded-lg transition-all text-center"
         >
           ➕ Nueva Transmisión
         </Link>
@@ -66,13 +66,13 @@ export default function HistorialLivePage() {
           Cargando historial...
         </div>
       ) : transmisiones.length === 0 ? (
-        <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-8 text-center text-slate-400 text-sm">
+        <div className="bg-brand-raised border border-surface-border rounded-xl p-8 text-center text-slate-400 text-sm">
           No hay transmisiones registradas aún.
         </div>
       ) : (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
+        <div className="bg-brand-raised border border-surface-border rounded-xl overflow-hidden">
           <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900 text-slate-400 font-medium uppercase border-b border-slate-800">
+            <thead className="bg-brand-dark text-slate-400 font-medium uppercase border-b border-surface-border">
               <tr>
                 <th className="px-4 py-3">Usuario TikTok</th>
                 <th className="px-4 py-3">Estado</th>
@@ -82,11 +82,11 @@ export default function HistorialLivePage() {
                 <th className="px-4 py-3 text-right">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-surface-border">
               {transmisiones.map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-slate-800/40 transition-colors"
+                  className="hover:bg-surface-hover transition-colors"
                 >
                   <td className="px-4 py-3 font-semibold text-slate-100">
                     @{item.tiktokUsername}
@@ -95,7 +95,7 @@ export default function HistorialLivePage() {
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                         item.estado === 'ACTIVA'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          ? 'bg-estado-validado/10 text-estado-validado border border-estado-validado/20'
                           : 'bg-slate-800 text-slate-400'
                       }`}
                     >
@@ -108,7 +108,7 @@ export default function HistorialLivePage() {
                   <td className="px-4 py-3 text-center font-bold text-brand-cyan">
                     {item.totalComentarios}
                   </td>
-                  <td className="px-4 py-3 text-center font-bold text-emerald-400">
+                  <td className="px-4 py-3 text-center font-bold text-estado-validado">
                     {item.totalVentas}
                   </td>
                   <td className="px-4 py-3 text-right">

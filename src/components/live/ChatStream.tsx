@@ -1,14 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import type { ChatMensajeEvento } from "@/types/socket";
 
 interface ChatStreamProps {
   comentarios?: any[];
   onUpdateCount?: (count: number) => void;
+  onPostular?: (mensaje: ChatMensajeEvento) => void;
 }
 
-export function ChatStream({ comentarios = [] }: ChatStreamProps) {
+export function ChatStream({
+  comentarios = [],
+  onUpdateCount,
+  onPostular,
+}: ChatStreamProps) {
+  // Notificar cambios en la cantidad de mensajes si existe la función callback
+  useEffect(() => {
+    if (onUpdateCount) {
+      onUpdateCount(comentarios.length);
+    }
+  }, [comentarios.length, onUpdateCount]);
+
   const mensajes: ChatMensajeEvento[] = comentarios.map((c) => {
     // Priorizar Nickname si no es anónimo
     const nombreAMostrar =
@@ -26,8 +38,8 @@ export function ChatStream({ comentarios = [] }: ChatStreamProps) {
   });
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-slate-800 bg-slate-900">
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-950/40">
+    <div className="flex h-full flex-col rounded-lg border border-surface-border bg-brand-dark">
+      <div className="flex items-center justify-between border-b border-surface-border px-4 py-3 bg-brand-darkest/50">
         <span className="font-poppins font-medium uppercase tracking-wider text-xs text-slate-200">
           Chat filtrado de la transmisión
         </span>
@@ -48,7 +60,7 @@ export function ChatStream({ comentarios = [] }: ChatStreamProps) {
             return (
               <div
                 key={uniqueKey}
-                className="flex items-center justify-between rounded p-1.5 transition-colors hover:bg-slate-800/50"
+                className="group flex items-center justify-between rounded p-1.5 transition-colors hover:bg-surface-hover"
               >
                 <div className="text-sm font-inter pr-2">
                   <span className="font-semibold text-brand-cyan font-poppins">
@@ -56,6 +68,16 @@ export function ChatStream({ comentarios = [] }: ChatStreamProps) {
                   </span>
                   <span className="text-slate-200">{m.mensaje}</span>
                 </div>
+
+                {onPostular && (
+                  <button
+                    type="button"
+                    onClick={() => onPostular(m)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-estado-validado/20 hover:bg-estado-validado/30 text-brand-cyan text-xs px-2 py-1 rounded font-poppins font-medium cursor-pointer"
+                  >
+                    Postular
+                  </button>
+                )}
               </div>
             );
           })
