@@ -182,7 +182,7 @@ export default function ChatBotPage() {
               <div className="flex h-64 items-center justify-center">
                 <Loader2 size={28} className="animate-spin text-brand-cyan" />
               </div>
-            ) : status === "QR_READY" && data?.qr ? (
+            ) : data?.qr ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="rounded-xl border-4 border-brand-cyan bg-white p-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
