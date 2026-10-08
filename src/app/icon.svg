@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Gato de ojos almendrados. Estilo plano, un solo color, pensado para leerse
+    como favicon incluso a 16 px: las orejas son triángulos marcados y los ojos
+    son cortes blancos con la pupila vertical, que es lo que lo hace
+    reconocible a ese tamaño.
+    Para usar un archivo propio, borra este SVG y deja icon.png en src/app/.
+  -->
+  <g fill="#34D399">
+    <!-- Cabeza: orejas + contorno en un solo trazo -->
+    <path d="M126 118 92 62c-3-5-10-6-14-3-3 2-5 6-5 10v84c-24 27-38 62-38 102 0 79 96 139 221 139s221-60 221-139c0-40-14-75-38-102V69c0-4-2-8-5-10-4-3-11-2-14 3l-34 56c-33-17-73-26-130-26s-97 9-130 26z"/>
+  </g>
+
+  <!-- Ojos: cortes blancos -->
+  <g fill="#060D1F">
+    <path d="M148 268c-16 0-31 8-42 21 11 13 26 21 42 21s31-8 42-21c-11-13-26-21-42-21z"/>
+    <path d="M364 268c-16 0-31 8-42 21 11 13 26 21 42 21s31-8 42-21c-11-13-26-21-42-21z"/>
+  </g>
+
+  <!-- Pupilas verticales: el detalle que distingue a un gato de un oso -->
+  <g fill="#34D399">
+    <rect x="168" y="274" width="12" height="30" rx="6"/>
+    <rect x="332" y="274" width="12" height="30" rx="6"/>
+  </g>
+
+  <!-- Nariz y boca -->
+  <g fill="#060D1F">
+    <path d="M244 336h24l-12 14z"/>
+    <path d="M256 350v10m0 0c-6 0-11-3-14-7m14 7c6 0 11-3 14-7" fill="none" stroke="#060D1F" stroke-width="7" stroke-linecap="round"/>
+  </g>
+</svg>

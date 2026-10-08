@@ -25,6 +25,79 @@ export function formatoFecha(fecha: string | Date): string {
 }
 
 /**
+ * Normaliza texto para búsquedas: sin acentos y en minúsculas.
+ *
+ * Sin esto, buscar "camisa" no encuentra "Camisa" y buscar "pantalon" no
+ * encuentra "Pantalón", que es justo lo que un vendedor escribe.
+ */
+export function normalizarTexto(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim();
+}
+
+/**
+ * Devuelve el rango [desde, hasta] de un periodo relativo, en milisegundos.
+ *
+ * Los cortes se calculan en hora local, no en UTC: si "hoy" empezara a las
+ * 00:00 UTC, en Bolivia (UTC-4) la tarde siguiente ya estaría
+ * dentro de "hoy", que es intuitivamente incorrecto para el vendedor.
+ */
+export function rangoPeriodo(
+  periodo: PeriodoFiltro,
+  ahora: Date = new Date()
+): { desde: Date; hasta: Date } {
+  const inicioDia = new Date(
+    ahora.getFullYear(),
+    ahora.getMonth(),
+    ahora.getDate()
+  );
+
+  switch (periodo) {
+    case "hoy":
+      return { desde: inicioDia, hasta: new Date(ahora.getTime()) };
+
+    case "semana": {
+      // Semana que empieza el lunes, que es como la cuenta el vendedor.
+      const diaSemana = (inicioDia.getDay() + 6) % 7;
+      const lunes = new Date(inicioDia);
+      lunes.setDate(lunes.getDate() - diaSemana);
+      return { desde: lunes, hasta: new Date(ahora.getTime()) };
+    }
+
+    case "mes":
+      return {
+        desde: new Date(ahora.getFullYear(), ahora.getMonth(), 1),
+        hasta: new Date(ahora.getTime()),
+      };
+
+    case "mes-anterior": {
+      const primeroEsteMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+      const ultimoMesAnterior = new Date(primeroEsteMes);
+      ultimoMesAnterior.setMonth(ultimoMesAnterior.getMonth() - 1);
+      return { desde: ultimoMesAnterior, hasta: primeroEsteMes };
+    }
+
+    case "todo":
+    default:
+      return { desde: new Date(0), hasta: new Date(ahora.getTime()) };
+  }
+}
+
+/** Filtros de fecha que comparten Reportes y Pedidos. */
+export const PERIODOS_FILTRO = [
+  { value: "todo", label: "Todo" },
+  { value: "hoy", label: "Hoy" },
+  { value: "semana", label: "Esta semana" },
+  { value: "mes", label: "Este mes" },
+  { value: "mes-anterior", label: "Mes anterior" },
+] as const;
+
+export type PeriodoFiltro = (typeof PERIODOS_FILTRO)[number]["value"];
+
+/**
  * Convierte una duración en milisegundos a texto legible.
  * Ejemplos: 45s, 1h, 1h 30m.
  */
