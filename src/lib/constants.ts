@@ -45,6 +45,7 @@ export const ROUTES = {
   LOGIN: '/login',
   /** Recuperación de contraseña: pide el correo y avisa que le llegue un email. */
   RECUPERAR_PASSWORD: '/recuperar-password',
+  RESET_PASSWORD: '/reset-password',
   /** Raíz del panel: entra directamente a Productos. */
   DASHBOARD: '/products',
   LIVE: '/live',

@@ -14,7 +14,7 @@ import { apiClient } from '@/services/api.client'
 import { ROUTES } from '@/lib/constants'
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'El correo electrónico es requerido'),
+  email: z.string().min(1, 'El correo electrónico es requerido').email('El correo no es válido'),
   password: z.string().min(1, 'La contraseña es requerida'),
 })
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
     setError(null)
     try {
       const response = await apiClient.post('/auth/login', {
-        username: values.username,
+        email: values.email,
         password: values.password,
       })
 
@@ -83,8 +83,8 @@ export default function LoginPage() {
             inputMode="email"
             placeholder="Correo electrónico"
             autoComplete="username"
-            error={errors.username?.message}
-            {...register('username')}
+            error={errors.email?.message}
+            {...register('email')}
           />
           <Input
             type="password"
