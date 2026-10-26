@@ -10,7 +10,8 @@ export function middleware(request: NextRequest) {
   // accesible sin token; y si ya hay sesión, no tiene sentido verlas.
   const esRutaDeAcceso =
     pathname.startsWith(ROUTES.LOGIN) ||
-    pathname.startsWith(ROUTES.RECUPERAR_PASSWORD)
+    pathname.startsWith(ROUTES.RECUPERAR_PASSWORD) ||
+    pathname.startsWith(ROUTES.RESET_PASSWORD)
 
   if (!token && !esRutaDeAcceso) {
     const loginUrl = new URL(ROUTES.LOGIN, request.url)
