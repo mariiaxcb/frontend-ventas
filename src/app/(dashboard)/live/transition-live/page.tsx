@@ -55,7 +55,7 @@ export default function TransitionLivePage() {
   const [activeStream, setActiveStream] = useState<ActiveStream | null>(null);
   const [verifying, setVerifying] = useState<boolean>(true);
   const [title, setTitle] = useState<string>("");
-  const [tiktokUsername, setTiktokUsername] = useState<string>("");
+  const [perfilTiktokUsername, setPerfilTiktokUsername] = useState<string>("");
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<ChatMensajeEvento[]>([]);
@@ -139,6 +139,25 @@ export default function TransitionLivePage() {
 
     fetchActiveStream();
   }, [token]);
+
+  // El usuario de TikTok se define una sola vez en Perfil. Aqui solo se lee,
+  // para no pedirlo en cada transmision.
+  useEffect(() => {
+    if (!token) return
+    let cancelado = false
+    fetch(`${BACKEND_URL}/api/auth/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (cancelado || !json?.success || !json?.data) return
+        setPerfilTiktokUsername((json.data.tiktokUsername ?? '').replace(/^@/, ''))
+      })
+      .catch(() => {})
+    return () => {
+      cancelado = true
+    }
+  }, [token])
 
   // Conexión Socket.IO
   useEffect(() => {
@@ -433,8 +452,13 @@ export default function TransitionLivePage() {
     }
 
     if (!title.trim()) return toast.error("Ingresa un título para la transmisión");
-    const cleanUsername = tiktokUsername.replace(/^@/, "").trim();
-    if (!cleanUsername) return toast.error("Ingresa un usuario de TikTok");
+
+    const cleanUsername = perfilTiktokUsername.replace(/^@/, "").trim();
+    if (!cleanUsername) {
+      toast.error("Configura tu usuario de TikTok en Perfil antes de iniciar un live");
+      router.push("/perfil");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -446,7 +470,6 @@ export default function TransitionLivePage() {
         },
         body: JSON.stringify({
           title: title.trim(),
-          tiktokUsername: cleanUsername,
         }),
       });
 
@@ -507,7 +530,6 @@ export default function TransitionLivePage() {
       setIsConnected(false);
       setActiveStream(null);
       setTitle("");
-      setTiktokUsername("");
       setShowEndModal(false);
       setProductosLive([]);
       limpiarNotificaciones();
@@ -632,23 +654,41 @@ export default function TransitionLivePage() {
 
             <div className="w-full">
               <label className="mb-1 block text-xs font-medium text-slate-300">
-                Usuario de TikTok *
+                Usuario de TikTok
               </label>
-              <div className="flex items-stretch">
-                <span className="flex items-center rounded-l-md border border-r-0 border-surface-border bg-brand-darkest px-3 text-sm text-slate-400">
-                  @
+              <div className="flex items-center justify-between rounded-md border border-surface-border bg-brand-darkest px-3 py-2.5">
+                <span className="text-sm font-medium text-brand-cyan">
+                  {perfilTiktokUsername ? `@${perfilTiktokUsername}` : 'Sin configurar'}
                 </span>
-                <Input
-                  type="text"
-                  placeholder="mi_tienda_live"
-                  value={tiktokUsername}
-                  onChange={(e) =>
-                    setTiktokUsername(e.target.value.replace(/^@/, ""))
-                  }
-                  className="rounded-l-none"
-                />
+                <button
+                  type="button"
+                  onClick={() => router.push('/perfil')}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-light underline underline-offset-4"
+                >
+                  Editar
+                </button>
               </div>
             </div>
+
+            {!perfilTiktokUsername && (
+              <div className="rounded-lg border border-estado-pendiente/30 bg-estado-pendiente/5 p-4">
+                <p className="text-sm font-medium text-estado-pendiente">
+                  Configura tu usuario de TikTok en Perfil
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Antes de iniciar una transmisión debes definir el usuario de
+                  TikTok con el que transmites. Hazlo una sola vez en la sección
+                  Perfil.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/perfil")}
+                  className="mt-2 text-xs font-semibold text-brand-light underline underline-offset-4"
+                >
+                  Ir a Perfil
+                </button>
+              </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={isLoading}>
