@@ -8,6 +8,7 @@ import {
   ClipboardList,
   BarChart3,
   Bot,
+  User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/lib/constants'
@@ -18,6 +19,7 @@ const items = [
   { href: ROUTES.ORDERS, label: 'Pedidos', icon: ClipboardList },
   { href: ROUTES.REPORTS, label: 'Reportes', icon: BarChart3 },
   { href: ROUTES.WHATSAPP, label: 'ChatBot', icon: Bot },
+  { href: ROUTES.PERFIL, label: 'Perfil', icon: User },
 ]
 
 export function Sidebar() {

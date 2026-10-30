@@ -55,4 +55,5 @@ export const ROUTES = {
   ORDERS: '/orders',
   REPORTS: '/reports',
   WHATSAPP: '/whatsapp',
+  PERFIL: '/perfil',
 } as const

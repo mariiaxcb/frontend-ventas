@@ -16,7 +16,6 @@ export interface Stream {
 
 export interface CreateStreamInput {
   title: string;
-  tiktokUsername: string;
 }
 
 /** Producto ofertado en el live, con el stock restante al finalizar. */
