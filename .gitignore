@@ -5,3 +5,10 @@ out/
 .env.local
 *.log
 .DS_Store
+
+# Caché de TypeScript. La regenera `tsc` y cambia en cada compilación: pesa
+# más de 100 KB y no aporta nada al repositorio.
+tsconfig.tsbuildinfo
+
+# Respaldos que crea el editor al cambiar la paleta del tema.
+*.bak

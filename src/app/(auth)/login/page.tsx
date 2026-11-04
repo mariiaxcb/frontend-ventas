@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertCircle } from 'lucide-react'
 import { z } from 'zod'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -13,7 +15,7 @@ import { ROUTES } from '@/lib/constants'
 import { Logo } from '@/components/ui/Logo'
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'El correo electrónico es requerido'),
+  email: z.string().min(1, 'El correo electrónico es requerido').email('El correo no es válido'),
   password: z.string().min(1, 'La contraseña es requerida'),
 })
 
@@ -34,7 +36,7 @@ export default function LoginPage() {
     setError(null)
     try {
       const response = await apiClient.post('/auth/login', {
-        username: values.username,
+        email: values.email,
         password: values.password,
       })
 
@@ -47,7 +49,7 @@ export default function LoginPage() {
           'Error de conexión. Asegúrate de que el servidor esté encendido.',
         )
       } else if (err.response.status === 401 || err.response.status === 400) {
-        setError('Credenciales inválidas.')
+        setError('Correo electrónico o contraseña incorrectos.')
       } else {
         setError(
           err.response.data?.message ||
@@ -70,23 +72,57 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/*
+            `type="text"` y no `type="email"` a propósito: la validación
+            nativa del navegador bloquea el envío si el valor no parece un
+            correo (por ejemplo "Admin"), y el backend autentica por nombre de
+            usuario. `inputMode="email"` mantiene el teclado de correo en el
+            móvil sin imponer el formato.
+          */}
           <Input
             type="text"
+            inputMode="email"
             placeholder="Correo electrónico"
-            error={errors.username?.message}
-            {...register('username')}
+            autoComplete="username"
+            error={errors.email?.message}
+            {...register('email')}
           />
           <Input
             type="password"
             placeholder="Contraseña"
+            autoComplete="current-password"
             error={errors.password?.message}
             {...register('password')}
           />
-          {error && <p className="text-sm font-inter text-estado-rechazado">{error}</p>}
+
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-estado-rechazado/40 bg-estado-rechazado/10 px-3 py-2"
+            >
+              <AlertCircle
+                size={16}
+                className="mt-0.5 shrink-0 text-estado-rechazado"
+              />
+              <p className="text-sm font-inter text-estado-rechazado">
+                {error}
+              </p>
+            </div>
+          )}
+
           <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
             {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
           </Button>
         </form>
+
+        <div className="mt-6 border-t border-surface-border pt-4 text-center">
+          <Link
+            href={ROUTES.RECUPERAR_PASSWORD}
+            className="text-sm text-slate-400 transition-colors hover:text-brand-cyan"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
       </div>
     </div>
   )

@@ -7,31 +7,70 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import {
+  DateFilter,
+  aplicarFiltros,
+  type OrdenCronologico,
+} from "@/components/ui/DateFilter";
 import { useStreams } from "@/hooks/useStreams";
-import { formatoFecha } from "@/lib/utils";
+import { formatoFecha, type PeriodoFiltro } from "@/lib/utils";
 import type { Stream } from "@/services/streams.api";
 
-const POR_PAGINA = 10;
+const POR_PAGINA = 5;
 
 export default function ReportesPage() {
   const router = useRouter();
   const { data: streams, isLoading, isError, refetch } = useStreams();
+
+  const [busqueda, setBusqueda] = useState("");
+  const [periodo, setPeriodo] = useState<PeriodoFiltro>("todo");
+  const [orden, setOrden] = useState<OrdenCronologico>("recientes");
   const [pagina, setPagina] = useState(1);
 
-  // El backend devuelve las transmisiones de la mas reciente a la mas antigua.
   const lista = useMemo(() => streams ?? [], [streams]);
 
-  const totalPaginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
+  /**
+   * Se busca por el título del live y por el usuario de TikTok: el vendedor
+   * se refiere a una transmisión por cualquiera de los dos.
+   */
+  const filtrados = useMemo(
+    () =>
+      aplicarFiltros(lista, {
+        busqueda,
+        periodo,
+        orden,
+        campos: (s) => [s.title, s.tiktokUsername],
+        fecha: (s) => s.startDate,
+      }),
+    [lista, busqueda, periodo, orden]
+  );
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);
 
   const visibles = useMemo(
     () =>
-      lista.slice(
+      filtrados.slice(
         (paginaActual - 1) * POR_PAGINA,
         paginaActual * POR_PAGINA
       ),
-    [lista, paginaActual]
+    [filtrados, paginaActual]
   );
+
+  function cambiarBusqueda(valor: string) {
+    setBusqueda(valor);
+    setPagina(1);
+  }
+
+  function cambiarPeriodo(valor: PeriodoFiltro) {
+    setPeriodo(valor);
+    setPagina(1);
+  }
+
+  function cambiarOrden(valor: OrdenCronologico) {
+    setOrden(valor);
+    setPagina(1);
+  }
 
   if (isLoading) {
     return (
@@ -68,25 +107,48 @@ export default function ReportesPage() {
         />
       ) : (
         <>
-          <div className="space-y-3">
-            {visibles.map((stream) => (
-              <ReportRow
-                key={stream.id}
-                stream={stream}
-                onClick={() =>
-                  router.push(`/live/summary?streamId=${stream.id}`)
-                }
-              />
-            ))}
-          </div>
-
-          <Pagination
-            pagina={paginaActual}
-            totalPaginas={totalPaginas}
-            totalElementos={lista.length}
-            porPagina={POR_PAGINA}
-            onCambio={setPagina}
+          <DateFilter
+            busqueda={busqueda}
+            placeholderBusqueda="Buscar transmisión por nombre..."
+            etiquetaBusqueda="Buscar transmisiones por nombre o usuario de TikTok"
+            periodo={periodo}
+            orden={orden}
+            onBusqueda={cambiarBusqueda}
+            onPeriodo={cambiarPeriodo}
+            onOrden={cambiarOrden}
+            total={lista.length}
+            visibles={filtrados.length}
           />
+
+          {filtrados.length === 0 ? (
+            <EmptyState
+              icon={BarChart3}
+              title="Ninguna transmisión coincide"
+              description="Prueba con otro nombre o cambia el periodo de búsqueda."
+            />
+          ) : (
+            <>
+              <div className="space-y-3">
+                {visibles.map((stream) => (
+                  <ReportRow
+                    key={stream.id}
+                    stream={stream}
+                    onClick={() =>
+                      router.push(`/live/summary?streamId=${stream.id}`)
+                    }
+                  />
+                ))}
+              </div>
+
+              <Pagination
+                pagina={paginaActual}
+                totalPaginas={totalPaginas}
+                totalElementos={filtrados.length}
+                porPagina={POR_PAGINA}
+                onCambio={setPagina}
+              />
+            </>
+          )}
         </>
       )}
     </div>

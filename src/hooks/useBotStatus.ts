@@ -38,7 +38,15 @@ export function useBotLogout() {
   });
 }
 
-/** Genera un QR nuevo cuando el bot quedó sin ninguno. */
+/**
+ * Pide un QR nuevo al bot.
+ *
+ * El QR no viene en la respuesta: WhatsApp lo emite de forma asíncrona tras
+ * abrir la conexión. Por eso, además de invalidar la consulta, forzamos
+ * reintentos cortos durante los primeros segundos. Si solo invalidiéramos una
+ * vez, el vendedor vería "generando QR" hasta el siguiente sondeo y allí
+ * aparecería el código.
+ */
 export function useBotConnect() {
   const queryClient = useQueryClient();
 
@@ -46,6 +54,14 @@ export function useBotConnect() {
     mutationFn: () => botApi.connect(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOT_STATUS_KEY });
+
+      // El QR suele llegar entre 1 y 4 segundos. Sondeamos varias veces en
+      // esa ventana para que aparezca sin que el vendedor recargue.
+      [1000, 2500, 4000].forEach((ms) => {
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: BOT_STATUS_KEY });
+        }, ms);
+      });
     },
   });
 }
