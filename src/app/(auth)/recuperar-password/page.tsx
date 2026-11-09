@@ -48,11 +48,10 @@ export default function RecuperarPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-brand-darkest px-4 text-slate-100">
       <div className="w-full max-w-sm rounded-lg border border-surface-border bg-brand-dark p-8 shadow-xl">
         <h1 className="mb-2 text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
-          Recuperar contrasena
+          Recuperar contraseña
         </h1>
         <p className="mb-6 text-sm font-inter text-slate-400">
-          Ingresa tu correo electronico y te enviaremos un enlace para establecer
-          una nueva contrasena.
+          Ingresa tu correo y te enviaremos un enlace para establecer una nueva contraseña.
         </p>
 
         {enviado ? (
@@ -63,7 +62,7 @@ export default function RecuperarPasswordPage() {
                 Correo enviado
               </p>
               <p className="mt-1 text-sm text-slate-400">
-                Si el correo existe, se envio un enlace de recuperacion a{' '}
+                Se envio un enlace de recuperacion a{' '}
                 <span className="font-medium text-slate-200">{correo}</span>.
                 Revisa tu bandeja de entrada.
               </p>

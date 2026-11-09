@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/context/AuthContext'
 import { apiClient } from '@/services/api.client'
 import { ROUTES } from '@/lib/constants'
+import { Logo } from '@/components/ui/Logo'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'El correo electrónico es requerido').email('El correo no es válido'),
@@ -62,12 +63,12 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-darkest px-4 text-slate-100">
       <div className="w-full max-w-sm rounded-lg border border-surface-border bg-brand-dark p-8 shadow-xl">
-        <h1 className="mb-2 text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
-          TikTok Live Sales
+        <h1 className="mb-6 flex justify-center">
+          <span className="sr-only">VentasLive</span>
+          <Logo size="lg" />
         </h1>
         <p className="mb-6 text-sm font-inter text-slate-400">
-          Inicie sesión con su correo electrónico y contraseña para acceder al
-          sistema.
+          Ingrese su correo y contraseña para acceder al sistema.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -110,7 +111,7 @@ export default function LoginPage() {
           )}
 
           <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
-            {isSubmitting ? 'Iniciando sesión…' : 'Ingresar'}
+            {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
           </Button>
         </form>
 
