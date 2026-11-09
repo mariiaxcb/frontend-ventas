@@ -15,6 +15,7 @@ export interface Producto {
   image?: string;
   categoryName?: string;
   estado?: EstadoProducto;
+  status?: EstadoProducto;
   createdAt?: string;
   updatedAt?: string;
 
@@ -30,4 +31,5 @@ export interface ProductoInput {
   description?: string;
   image?: File | null;
   estado?: EstadoProducto;
+  status?: EstadoProducto;
 }
