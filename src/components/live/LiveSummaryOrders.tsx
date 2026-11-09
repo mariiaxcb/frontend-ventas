@@ -222,8 +222,7 @@ function ComprobanteVisor({ url, orden, onClose }: ComprobanteVisorProps) {
         </div>
 
         <p className="text-xs text-slate-400">
-          Revisa que la referencia y el monto correspondan a este pedido antes
-          de validarlo en Pedidos.
+          Revisa que la referencia y el monto correspondan a este pedido.
         </p>
       </div>
     </div>
