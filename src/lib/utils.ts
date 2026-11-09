@@ -13,6 +13,15 @@ export function formatoMoneda(valor: number): string {
   }).format(valor);
 }
 
+/** Porcentaje con coma decimal, como se escribe en Bolivia. */
+export function formatoPorcentaje(valor: number, decimales = 1): string {
+  return new Intl.NumberFormat("es-BO", {
+    style: "percent",
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  }).format(valor / 100);
+}
+
 export function formatoFecha(fecha: string | Date): string {
   const d = typeof fecha === "string" ? new Date(fecha) : fecha;
   return new Intl.DateTimeFormat("es-BO", {

@@ -1,130 +1,242 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
+  BarChart3,
+  ChevronRight,
+  Loader2,
+  Plus,
+  Radio,
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+import {
+  DateFilter,
+  aplicarFiltros,
+  type OrdenCronologico,
+} from "@/components/ui/DateFilter";
+import { useStreams } from "@/hooks/useStreams";
+import { formatoFecha, type PeriodoFiltro } from "@/lib/utils";
+import type { Stream } from "@/services/streams.api";
 
-interface Transmision {
-  id: string
-  tiktokUsername: string
-  fechaInicio: string
-  fechaFin?: string
-  totalComentarios: number
-  totalVentas: number
-  estado: 'ACTIVA' | 'FINALIZADA'
-}
+const POR_PAGINA = 5;
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
+export default function TransmisionesPage() {
+  const router = useRouter();
+  const { data: streams, isLoading, isError, refetch } = useStreams();
 
-export default function HistorialLivePage() {
-  const [transmisiones, setTransmisiones] = useState<Transmision[]>([])
-  const [cargando, setCargando] = useState<boolean>(true)
+  const [busqueda, setBusqueda] = useState("");
+  const [periodo, setPeriodo] = useState<PeriodoFiltro>("todo");
+  const [orden, setOrden] = useState<OrdenCronologico>("recientes");
+  const [pagina, setPagina] = useState(1);
 
-  useEffect(() => {
-    const fetchHistorial = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/tiktok/historial`)
-        if (res.ok) {
-          const data = await res.json()
-          setTransmisiones(data)
-        }
-      } catch (error) {
-        console.error('Error al obtener historial:', error)
-      } finally {
-        setCargando(false)
-      }
-    }
+  const lista = useMemo(() => streams ?? [], [streams]);
 
-    fetchHistorial()
-  }, [])
+  /**
+   * Se busca por el título del live y por el usuario de TikTok: el vendedor
+   * se refiere a una transmisión por cualquiera de los dos.
+   */
+  const filtrados = useMemo(
+    () =>
+      aplicarFiltros(lista, {
+        busqueda,
+        periodo,
+        orden,
+        campos: (s) => [s.title, s.tiktokUsername],
+        fecha: (s) => s.startDate,
+      }),
+    [lista, busqueda, periodo, orden]
+  );
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+
+  const visibles = useMemo(
+    () =>
+      filtrados.slice(
+        (paginaActual - 1) * POR_PAGINA,
+        paginaActual * POR_PAGINA
+      ),
+    [filtrados, paginaActual]
+  );
+
+  function cambiarBusqueda(valor: string) {
+    setBusqueda(valor);
+    setPagina(1);
+  }
+
+  function cambiarPeriodo(valor: PeriodoFiltro) {
+    setPeriodo(valor);
+    setPagina(1);
+  }
+
+  function cambiarOrden(valor: OrdenCronologico) {
+    setOrden(valor);
+    setPagina(1);
+  }
 
   return (
     <div className="space-y-6">
-      {/* Encabezado */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-surface-border pb-4">
-        <div>
-          <h1 className="text-2xl font-poppins font-bold text-brand-cyan tracking-wide">
-            Historial de Transmisiones
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Consulta el registro de directos monitoreados y sus métricas de
-            venta.
-          </p>
-        </div>
+      <PageHeader
+        title="Transmisiones"
+        subtitle="Historial de lives y resultados de cada transmisión"
+        action={
+          <Button
+            variant="primary"
+            onClick={() => router.push("/live/transition-live")}
+          >
+            <Plus size={16} className="mr-2" />
+            Nueva transmisión
+          </Button>
+        }
+      />
 
-        <Link
-          href="/live/transition-live"
-          className="px-4 py-2 text-xs font-semibold text-slate-100 bg-brand-cyan hover:bg-emerald-400 rounded-lg transition-all text-center"
-        >
-          ➕ Nueva Transmisión
-        </Link>
-      </div>
-
-      {/* Listado / Tabla */}
-      {cargando ? (
-        <div className="text-center py-10 text-slate-400 text-sm">
-          Cargando historial...
-        </div>
-      ) : transmisiones.length === 0 ? (
-        <div className="bg-brand-raised border border-surface-border rounded-xl p-8 text-center text-slate-400 text-sm">
-          No hay transmisiones registradas aún.
-        </div>
-      ) : (
-        <div className="bg-brand-raised border border-surface-border rounded-xl overflow-hidden">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-brand-dark text-slate-400 font-medium uppercase border-b border-surface-border">
-              <tr>
-                <th className="px-4 py-3">Usuario TikTok</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Inicio</th>
-                <th className="px-4 py-3 text-center">Comentarios</th>
-                <th className="px-4 py-3 text-center">Ventas BD</th>
-                <th className="px-4 py-3 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {transmisiones.map((item) => (
-                <tr
-                  key={item.id}
-                  className="hover:bg-surface-hover transition-colors"
-                >
-                  <td className="px-4 py-3 font-semibold text-slate-100">
-                    @{item.tiktokUsername}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                        item.estado === 'ACTIVA'
-                          ? 'bg-estado-validado/10 text-estado-validado border border-estado-validado/20'
-                          : 'bg-slate-800 text-slate-400'
-                      }`}
-                    >
-                      {item.estado}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {new Date(item.fechaInicio).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-center font-bold text-brand-cyan">
-                    {item.totalComentarios}
-                  </td>
-                  <td className="px-4 py-3 text-center font-bold text-estado-validado">
-                    {item.totalVentas}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/live/${item.id}`}
-                      className="text-brand-cyan hover:underline text-xs font-medium"
-                    >
-                      Ver detalle →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isLoading && (
+        <div className="flex items-center justify-center gap-3 py-16 text-slate-400">
+          <Loader2 size={26} className="animate-spin text-brand-cyan" />
+          <span className="text-sm">Cargando transmisiones...</span>
         </div>
       )}
+
+      {isError && (
+        <EmptyState
+          icon={AlertCircle}
+          title="No se pudieron cargar las transmisiones"
+          description="Verifica que la API esté disponible."
+          action={{ label: "Reintentar", onClick: () => refetch() }}
+        />
+      )}
+
+      {!isLoading && !isError && lista.length === 0 && (
+        <EmptyState
+          icon={BarChart3}
+          title="Todavía no hay transmisiones"
+          description="Cuando inicies tu primer live aparecerá aquí con su resumen."
+          action={{
+            label: "Iniciar transmisión",
+            onClick: () => router.push("/live/transition-live"),
+          }}
+        />
+      )}
+
+      {!isLoading && !isError && lista.length > 0 && (
+        <>
+          <DateFilter
+            busqueda={busqueda}
+            placeholderBusqueda="Buscar transmisión por nombre..."
+            etiquetaBusqueda="Buscar transmisiones por nombre o usuario de TikTok"
+            periodo={periodo}
+            orden={orden}
+            onBusqueda={cambiarBusqueda}
+            onPeriodo={cambiarPeriodo}
+            onOrden={cambiarOrden}
+            total={lista.length}
+            visibles={filtrados.length}
+          />
+
+          {filtrados.length === 0 ? (
+            <EmptyState
+              icon={BarChart3}
+              title="Ninguna transmisión coincide"
+              description="Prueba con otro nombre o cambia el periodo de búsqueda."
+            />
+          ) : (
+            <>
+              <div className="space-y-3">
+                {visibles.map((stream) => (
+                  <ReportRow
+                    key={stream.id}
+                    stream={stream}
+                    onClick={() =>
+                      router.push(`/live/summary?streamId=${stream.id}`)
+                    }
+                  />
+                ))}
+              </div>
+
+              <Pagination
+                pagina={paginaActual}
+                totalPaginas={totalPaginas}
+                totalElementos={filtrados.length}
+                porPagina={POR_PAGINA}
+                onCambio={setPagina}
+              />
+            </>
+          )}
+        </>
+      )}
     </div>
-  )
+  );
+}
+
+interface ReportRowProps {
+  stream: Stream;
+  onClick: () => void;
+}
+
+function ReportRow({ stream, onClick }: ReportRowProps) {
+  const enVivo = stream.status === "LIVE";
+
+  return (
+    <Card className="cursor-pointer transition-colors hover:border-brand-cyan/40">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center justify-between gap-4 text-left"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-primary/15">
+            <Radio
+              size={22}
+              className={enVivo ? "text-estado-validado" : "text-brand-light"}
+            />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="truncate font-medium text-slate-100">
+                {stream.title}
+              </span>
+              {enVivo ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-estado-validado/10 px-2 py-0.5 text-[10px] font-semibold text-estado-validado">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-estado-validado" />
+                  EN VIVO
+                </span>
+              ) : (
+                <span className="rounded-full bg-slate-500/10 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+                  Finalizado
+                </span>
+              )}
+            </div>
+
+            <p className="mt-0.5 text-xs text-slate-400">
+              @{stream.tiktokUsername} · Inicio {formatoFecha(stream.startDate)}
+              {stream.endDate ? ` · Fin ${formatoFecha(stream.endDate)}` : ""}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-4">
+          <div className="hidden text-right sm:block">
+            <p className="text-xs text-slate-400">Pedidos</p>
+            <p className="font-poppins text-base font-bold text-slate-100">
+              {(stream as any)._count?.orders ?? 0}
+            </p>
+          </div>
+          <div className="hidden text-right md:block">
+            <p className="text-xs text-slate-400">Productos</p>
+            <p className="font-poppins text-base font-bold text-slate-100">
+              {stream.products?.length ?? 0}
+            </p>
+          </div>
+          <ChevronRight size={18} className="text-slate-500" />
+        </div>
+      </button>
+    </Card>
+  );
 }

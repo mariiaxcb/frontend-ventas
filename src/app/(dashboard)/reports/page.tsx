@@ -2,220 +2,271 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Radio, Loader2, AlertCircle, ChevronRight } from "lucide-react";
+import {
+  AlertCircle,
+  Banknote,
+  BarChart3,
+  Clock,
+  Loader2,
+  PackageCheck,
+  Percent,
+  ReceiptText,
+  ShoppingBag,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Pagination } from "@/components/ui/Pagination";
+import { ReportKpiCard } from "@/components/reportes/ReportKpiCard";
+import { ReportPeriodPicker } from "@/components/reportes/ReportPeriodPicker";
+import { SalesBarChart } from "@/components/reportes/SalesBarChart";
+import { StatusBreakdown } from "@/components/reportes/StatusBreakdown";
+import { TopProductsTable } from "@/components/reportes/TopProductsTable";
+import { StreamPerformance } from "@/components/reportes/StreamPerformance";
+import { usePedidos } from "@/hooks/usePedidos";
 import {
-  DateFilter,
-  aplicarFiltros,
-  type OrdenCronologico,
-} from "@/components/ui/DateFilter";
-import { useStreams } from "@/hooks/useStreams";
-import { formatoFecha, type PeriodoFiltro } from "@/lib/utils";
-import type { Stream } from "@/services/streams.api";
-
-const POR_PAGINA = 5;
+  calcularReporte,
+  desplazarReferencia,
+  esRangoActual,
+  filtrarPedidosPorRango,
+  rangoReporte,
+  variacionPorcentual,
+  type PeriodoReporte,
+} from "@/lib/reportes";
+import { formatoMoneda, formatoPorcentaje } from "@/lib/utils";
 
 export default function ReportesPage() {
   const router = useRouter();
-  const { data: streams, isLoading, isError, refetch } = useStreams();
+  const [periodo, setPeriodo] = useState<PeriodoReporte>("diario");
+  const [referencia, setReferencia] = useState(() => new Date());
 
-  const [busqueda, setBusqueda] = useState("");
-  const [periodo, setPeriodo] = useState<PeriodoFiltro>("todo");
-  const [orden, setOrden] = useState<OrdenCronologico>("recientes");
-  const [pagina, setPagina] = useState(1);
+  const { data: pedidos, isLoading, isError, refetch } = usePedidos();
 
-  const lista = useMemo(() => streams ?? [], [streams]);
-
-  /**
-   * Se busca por el título del live y por el usuario de TikTok: el vendedor
-   * se refiere a una transmisión por cualquiera de los dos.
-   */
-  const filtrados = useMemo(
-    () =>
-      aplicarFiltros(lista, {
-        busqueda,
-        periodo,
-        orden,
-        campos: (s) => [s.title, s.tiktokUsername],
-        fecha: (s) => s.startDate,
-      }),
-    [lista, busqueda, periodo, orden]
+  const rango = useMemo(
+    () => rangoReporte(periodo, referencia),
+    [periodo, referencia]
   );
 
-  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
-  const paginaActual = Math.min(pagina, totalPaginas);
-
-  const visibles = useMemo(
-    () =>
-      filtrados.slice(
-        (paginaActual - 1) * POR_PAGINA,
-        paginaActual * POR_PAGINA
-      ),
-    [filtrados, paginaActual]
+  const pedidosPeriodo = useMemo(
+    () => filtrarPedidosPorRango(pedidos ?? [], rango),
+    [pedidos, rango]
+  );
+  const pedidosAnteriores = useMemo(
+    () => filtrarPedidosPorRango(pedidos ?? [], rango.anterior),
+    [pedidos, rango]
   );
 
-  function cambiarBusqueda(valor: string) {
-    setBusqueda(valor);
-    setPagina(1);
-  }
+  const reporte = useMemo(
+    () => calcularReporte(pedidosPeriodo, periodo, rango),
+    [pedidosPeriodo, periodo, rango]
+  );
+  const reporteAnterior = useMemo(
+    () => calcularReporte(pedidosAnteriores, periodo, rango.anterior),
+    [pedidosAnteriores, periodo, rango]
+  );
 
-  function cambiarPeriodo(valor: PeriodoFiltro) {
-    setPeriodo(valor);
-    setPagina(1);
-  }
-
-  function cambiarOrden(valor: OrdenCronologico) {
-    setOrden(valor);
-    setPagina(1);
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center gap-3 py-16 text-slate-400">
-        <Loader2 size={26} className="animate-spin text-brand-cyan" />
-        <span className="text-sm">Cargando transmisiones...</span>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <EmptyState
-        icon={AlertCircle}
-        title="No se pudieron cargar los reportes"
-        description="Verifica que la API esté disponible."
-        action={{ label: "Reintentar", onClick: () => refetch() }}
-      />
-    );
-  }
+  const canNext = !esRangoActual(rango);
+  const sinPedidos = (pedidos?.length ?? 0) === 0;
+  const sinPedidosEnPeriodo = pedidosPeriodo.length === 0;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Reportes"
-        subtitle="Historial de transmisiones y sus resultados"
+        title="Reportes de ventas"
+        subtitle="Rendimiento diario, semanal y mensual de tu operación"
       />
 
-      {lista.length === 0 ? (
+      <ReportPeriodPicker
+        periodo={periodo}
+        etiqueta={rango.etiqueta}
+        onChange={setPeriodo}
+        onPrev={() =>
+          setReferencia((actual) =>
+            desplazarReferencia(periodo, actual, -1)
+          )
+        }
+        onNext={() =>
+          setReferencia((actual) => desplazarReferencia(periodo, actual, 1))
+        }
+        canNext={canNext}
+      />
+
+      {isLoading && (
+        <div className="flex items-center justify-center gap-3 py-16 text-slate-400">
+          <Loader2 size={26} className="animate-spin text-brand-cyan" />
+          <span className="text-sm">Calculando reporte...</span>
+        </div>
+      )}
+
+      {isError && (
+        <EmptyState
+          icon={AlertCircle}
+          title="No se pudo cargar el reporte"
+          description="Verifica que la API esté disponible e inténtalo de nuevo."
+          action={{ label: "Reintentar", onClick: () => refetch() }}
+        />
+      )}
+
+      {!isLoading && !isError && sinPedidos && (
         <EmptyState
           icon={BarChart3}
-          title="Todavía no hay transmisiones"
-          description="Cuando inicies tu primer live aparecerá aquí con su resumen."
+          title="Todavía no hay ventas registradas"
+          description="Cuando inicies una transmisión y se concreten pedidos, aquí verás tus reportes diarios, semanales y mensuales."
+          action={{
+            label: "Ir a transmisiones",
+            onClick: () => router.push("/live"),
+          }}
         />
-      ) : (
-        <>
-          <DateFilter
-            busqueda={busqueda}
-            placeholderBusqueda="Buscar transmisión por nombre..."
-            etiquetaBusqueda="Buscar transmisiones por nombre o usuario de TikTok"
-            periodo={periodo}
-            orden={orden}
-            onBusqueda={cambiarBusqueda}
-            onPeriodo={cambiarPeriodo}
-            onOrden={cambiarOrden}
-            total={lista.length}
-            visibles={filtrados.length}
-          />
+      )}
 
-          {filtrados.length === 0 ? (
-            <EmptyState
-              icon={BarChart3}
-              title="Ninguna transmisión coincide"
-              description="Prueba con otro nombre o cambia el periodo de búsqueda."
-            />
-          ) : (
-            <>
-              <div className="space-y-3">
-                {visibles.map((stream) => (
-                  <ReportRow
-                    key={stream.id}
-                    stream={stream}
-                    onClick={() =>
-                      router.push(`/live/summary?streamId=${stream.id}`)
-                    }
-                  />
-                ))}
-              </div>
-
-              <Pagination
-                pagina={paginaActual}
-                totalPaginas={totalPaginas}
-                totalElementos={filtrados.length}
-                porPagina={POR_PAGINA}
-                onCambio={setPagina}
-              />
-            </>
-          )}
-        </>
+      {!isLoading && !isError && !sinPedidos && (
+        <ReportContent
+          reporte={reporte}
+          reporteAnterior={reporteAnterior}
+          periodo={periodo}
+          etiqueta={rango.etiqueta}
+          sinPedidosEnPeriodo={sinPedidosEnPeriodo}
+        />
       )}
     </div>
   );
 }
 
-interface ReportRowProps {
-  stream: Stream;
-  onClick: () => void;
+interface ReportContentProps {
+  reporte: ReturnType<typeof calcularReporte>;
+  reporteAnterior: ReturnType<typeof calcularReporte>;
+  periodo: PeriodoReporte;
+  etiqueta: string;
+  sinPedidosEnPeriodo: boolean;
 }
 
-function ReportRow({ stream, onClick }: ReportRowProps) {
-  const enVivo = stream.status === "LIVE";
+function ReportContent({
+  reporte,
+  reporteAnterior,
+  periodo,
+  etiqueta,
+  sinPedidosEnPeriodo,
+}: ReportContentProps) {
+  const actual = reporte.kpis;
+  const previo = reporteAnterior.kpis;
 
   return (
-    <Card className="cursor-pointer transition-colors hover:border-brand-cyan/40">
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex w-full items-center justify-between gap-4 text-left"
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-primary/15">
-            <Radio
-              size={22}
-              className={enVivo ? "text-estado-validado" : "text-brand-light"}
-            />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="truncate font-medium text-slate-100">{stream.title}</span>
-              {enVivo ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-estado-validado/10 px-2 py-0.5 text-[10px] font-semibold text-estado-validado">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-estado-validado" />
-                  EN VIVO
-                </span>
-              ) : (
-                <span className="rounded-full bg-slate-500/10 px-2 py-0.5 text-[10px] font-medium text-slate-400">
-                  Finalizado
-                </span>
-              )}
-            </div>
-
-            <p className="mt-0.5 text-xs text-slate-400">
-              @{stream.tiktokUsername} · Inicio {formatoFecha(stream.startDate)}
-              {stream.endDate ? ` · Fin ${formatoFecha(stream.endDate)}` : ""}
-            </p>
-          </div>
+    <div className="space-y-6">
+      {sinPedidosEnPeriodo && (
+        <div className="rounded-lg border border-estado-pendiente/30 bg-estado-pendiente/5 px-4 py-3 text-xs text-estado-pendiente">
+          No hay pedidos en {etiqueta.toLowerCase()}. Usa las flechas para
+          revisar otro periodo.
         </div>
+      )}
 
-        <div className="flex shrink-0 items-center gap-4">
-          <div className="hidden text-right sm:block">
-            <p className="text-xs text-slate-400">Pedidos</p>
-            <p className="font-poppins text-base font-bold text-slate-100">
-              {(stream as any)._count?.orders ?? 0}
-            </p>
-          </div>
-          <div className="hidden text-right md:block">
-            <p className="text-xs text-slate-400">Productos</p>
-            <p className="font-poppins text-base font-bold text-slate-100">
-              {stream.products?.length ?? 0}
-            </p>
-          </div>
-          <ChevronRight size={18} className="text-slate-500" />
-        </div>
-      </button>
-    </Card>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <ReportKpiCard
+          label="Ingresos"
+          value={formatoMoneda(actual.ingresos)}
+          hint="vs. periodo anterior"
+          icon={Banknote}
+          tone="success"
+          delta={variacionPorcentual(actual.ingresos, previo.ingresos)}
+        />
+        <ReportKpiCard
+          label="Ventas"
+          value={String(actual.ventas)}
+          hint="pedidos pagados o entregados"
+          icon={ShoppingBag}
+          tone="brand"
+          delta={variacionPorcentual(actual.ventas, previo.ventas)}
+        />
+        <ReportKpiCard
+          label="Ticket promedio"
+          value={formatoMoneda(actual.ticketPromedio)}
+          hint="por venta"
+          icon={ReceiptText}
+          tone="info"
+          delta={variacionPorcentual(
+            actual.ticketPromedio,
+            previo.ticketPromedio
+          )}
+        />
+        <ReportKpiCard
+          label="Tasa de conversión"
+          value={formatoPorcentaje(actual.tasaConversion)}
+          hint="ventas / pedidos del periodo"
+          icon={Percent}
+          tone="warning"
+        />
+      </div>
+
+      <Card className="grid grid-cols-2 gap-4 p-4 sm:p-5 lg:grid-cols-4">
+        <MiniStat
+          icon={PackageCheck}
+          label="Unidades vendidas"
+          value={String(actual.unidades)}
+        />
+        <MiniStat
+          icon={Users}
+          label="Clientes únicos"
+          value={String(actual.clientes)}
+        />
+        <MiniStat
+          icon={Clock}
+          label="Por validar"
+          value={`${actual.porCobrar}`}
+          hint={formatoMoneda(actual.porCobrarMonto)}
+        />
+        <MiniStat
+          icon={Wallet}
+          label="Pendientes de pago"
+          value={String(actual.pendientes)}
+        />
+      </Card>
+
+      <SalesBarChart
+        buckets={reporte.buckets}
+        periodo={periodo}
+        etiqueta={etiqueta}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <TopProductsTable productos={reporte.productos} />
+        <StatusBreakdown
+          estados={reporte.estados}
+          totalPedidos={actual.pedidos}
+        />
+      </div>
+
+      <StreamPerformance streams={reporte.streams} />
+    </div>
+  );
+}
+
+interface MiniStatProps {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  hint?: string;
+}
+
+function MiniStat({ icon: Icon, label, value, hint }: MiniStatProps) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="rounded-lg bg-brand-primary/10 p-2 text-brand-light">
+        <Icon size={16} />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[11px] uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
+        <p className="font-poppins text-sm font-bold text-slate-100">
+          {value}
+          {hint && (
+            <span className="ml-1.5 text-[11px] font-medium text-slate-400">
+              {hint}
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
   );
 }
