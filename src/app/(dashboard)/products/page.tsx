@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { ProductFilters } from "@/components/productos/ProductFilters";
 import { ViewModeToggle, type ViewMode } from "@/components/productos/ViewModeToggle";
 import { ProductCatalogGrid } from "@/components/productos/ProductCatalogGrid";
@@ -14,6 +13,7 @@ import { useProductosFiltrados } from "@/hooks/useProductosFiltrados";
 import { useCambioEstadoProducto } from "@/hooks/useCambioEstadoProducto";
 import type { Producto } from "@/types/producto";
 import { IconAction } from "@/components/productos/IconAction";
+
 export default function ProductosPage() {
   const { data: productos, isLoading, isError, refetch } = useProductos();
   const { data: categorias, isLoading: cargandoCategorias } = useCategorias();
@@ -29,23 +29,13 @@ export default function ProductosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Catalogo de productos"
-        action={
-          <div className="flex items-center gap-3">
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            <IconAction
-              label="Nuevo producto"
-              icon={Plus}
-              href="/products/add"
-              variant="primary"
-              size={18}
-              side="bottom"
-            />
-          </div>
-        }
-      />
+      <div className="text-center py-2">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl font-poppins">
+          Catálogo de Productos
+        </h1>
+      </div>
 
+      {/* 2. Buscador y Filtros */}
       {hayDatos && (
         <ProductFilters
           filtros={filtros}
@@ -58,6 +48,20 @@ export default function ProductosPage() {
         />
       )}
 
+      {/* 3. Botones de Acción (Toggle de Vista y Agregar Producto) */}
+      <div className="flex items-center justify-end gap-3 pt-1">
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+        <IconAction
+          label="Nuevo producto"
+          icon={Plus}
+          href="/products/add"
+          variant="primary"
+          size={18}
+          side="bottom"
+        />
+      </div>
+
+      {/* Contenido principal (Grilla / Tabla) */}
       {isLoading && (
         <div className="py-12 text-center text-slate-400">Cargando catálogo...</div>
       )}

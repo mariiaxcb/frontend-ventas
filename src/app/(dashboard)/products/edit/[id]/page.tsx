@@ -52,7 +52,7 @@ export default function EditarProductoPage() {
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 space-y-4">
-      <FormHeader title="Editar Producto" subtitle={`Modificando información del producto #${id}`} />
+      <FormHeader title="Editar información de producto"  />
 
       {valores ? (
         <ProductForm
