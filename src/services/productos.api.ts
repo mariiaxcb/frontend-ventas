@@ -1,5 +1,5 @@
 import { apiClient } from "./api.client";
-import type { Producto, ProductoInput, Categoria } from "@/types/producto";
+import type { Producto, ProductoInput, Categoria, EstadoProducto } from "@/types/producto";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -80,9 +80,21 @@ export const productosApi = {
     return response.data.data;
   },
 
-  // DELETE: /products/:id
+  // DELETE: /products/:id (baja lógica: el backend marca el producto INACTIVE)
   eliminar: async (id: string | number): Promise<void> => {
     await apiClient.delete(`/products/${id}`);
+  },
+
+  // PUT: /products/:id -> cambia solo el estado del producto
+  cambiarEstado: async (
+    id: string | number,
+    status: EstadoProducto
+  ): Promise<Producto> => {
+    const response = await apiClient.put<ApiResponse<Producto>>(
+      `/products/${id}`,
+      { status }
+    );
+    return response.data.data;
   },
 
   // --- CATEGORÍAS ---
