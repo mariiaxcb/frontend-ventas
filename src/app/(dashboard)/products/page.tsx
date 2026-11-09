@@ -1,17 +1,55 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Package, Edit, Trash2, LayoutGrid, List, Power, Tag } from "lucide-react";
+import { Plus, Package, Edit, Trash2, LayoutGrid, List, Tag, Power } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/modal/confirmModal";
-import { useProductos } from "@/hooks/useProductos";
+import {
+  ProductFilters,
+  type ProductFiltersState,
+  type OrdenProductos,
+  type EstadoFiltro,
+} from "@/components/productos/ProductFilters";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { useProductos, useCategorias } from "@/hooks/useProductos";
 import { productosApi } from "@/services/productos.api";
+import type { Producto } from "@/types/producto";
+
+/** Filtros iniciales: sin búsqueda, orden por más reciente y sin acotar. */
+const FILTROS_INICIALES: ProductFiltersState = {
+  busqueda: "",
+  orden: "recientes",
+  categoriaId: "",
+  estado: "todos",
+};
+
+/** El nombre normalizado permite comparar sin acentos ni mayúsculas. */
+function normalizar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+/**
+ * Un producto está activo si su `status` lo dice. `isActive` y `activo` son los
+ * nombres que usaba la versión anterior, y se aceptan para no romper datos
+ * que vengan con esos nombres.
+ */
+function estaActivo(producto: any): boolean {
+  if (producto.status) return producto.status === "ACTIVE";
+  if (producto.isActive !== undefined) return Boolean(producto.isActive);
+  if (producto.activo !== undefined) return Boolean(producto.activo);
+  return true;
+}
 
 export default function ProductosPage() {
   const { data: productos, isLoading, isError, refetch } = useProductos();
+  const { data: categorias, isLoading: cargandoCategorias } = useCategorias();
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [filtros, setFiltros] = useState<ProductFiltersState>(FILTROS_INICIALES);
 
   // ESTADOS DEL MODAL Y ACCIONES
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,19 +60,81 @@ export default function ProductosPage() {
   } | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  // Filtrar solo activos para el Catálogo (Grid)
-  const productosActivos = useMemo(() => {
-    if (!productos) return [];
-    return productos.filter((p: any) => p.isActive ?? p.activo ?? true);
-  }, [productos]);
+  const cambiarFiltro = useCallback(
+    <K extends keyof ProductFiltersState>(
+      campo: K,
+      valor: ProductFiltersState[K]
+    ) => {
+      setFiltros((prev) => ({ ...prev, [campo]: valor }));
+    },
+    []
+  );
 
-  // Ordenar alfabéticamente A-Z todos los productos para la Tabla (Activos e Inactivos)
-  const productosTabla = useMemo(() => {
+  const limpiarFiltros = useCallback(() => setFiltros(FILTROS_INICIALES), []);
+
+  /**
+   * Aplica búsqueda, filtros y orden en un solo lugar.
+   *
+   * Se ordena una sola vez sobre la lista completa y ambas vistas consumen el
+   * resultado: así el catálogo y la tabla nunca muestran cosas distintas por
+   * un efecto colateral del orden por defecto.
+   */
+  const productosFiltrados = useMemo(() => {
     if (!productos) return [];
-    return [...productos].sort((a: any, b: any) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-    );
-  }, [productos]);
+
+    const texto = normalizar(filtros.busqueda.trim());
+
+    const filtrados = (productos as Producto[]).filter((p: any) => {
+      // Búsqueda por nombre.
+      if (texto && !normalizar(String(p.name ?? "")).includes(texto)) {
+        return false;
+      }
+
+      // Categoría.
+      if (filtros.categoriaId) {
+        const id = p.categoryId ?? p.category?.id;
+        if (String(id) !== filtros.categoriaId) return false;
+      }
+
+      // Estado.
+      if (filtros.estado === "activos" && !estaActivo(p)) return false;
+      if (filtros.estado === "inactivos" && estaActivo(p)) return false;
+
+      return true;
+    });
+
+    const orden = filtros.orden;
+    const fecha = (p: any) => new Date(p.createdAt ?? 0).getTime();
+
+    return [...filtrados].sort((a: any, b: any) => {
+      switch (orden) {
+        case "antiguos":
+          return fecha(a) - fecha(b);
+        case "stock-desc":
+          return (b.stock ?? 0) - (a.stock ?? 0);
+        case "stock-asc":
+          return (a.stock ?? 0) - (b.stock ?? 0);
+        case "nombre":
+          return String(a.name ?? "").localeCompare(
+            String(b.name ?? ""),
+            undefined,
+            { sensitivity: "base" }
+          );
+        case "recientes":
+        default:
+          return fecha(b) - fecha(a);
+      }
+    });
+  }, [productos, filtros]);
+
+  /** El catálogo muestra solo lo que está activo, igual que antes. */
+  const productosActivos = useMemo(
+    () => productosFiltrados.filter((p) => estaActivo(p)),
+    [productosFiltrados]
+  );
+
+  /** La tabla sí incluye los inactivos: el vendedor necesita verlos para reactivarlos. */
+  const productosTabla = productosFiltrados;
 
   // Abrir modal guardando datos del producto
   const handleOpenModal = (id: number | string, name: string, isActive: boolean) => {
@@ -83,53 +183,70 @@ export default function ProductosPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 p-4">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-poppins font-bold text-brand-cyan">
-            Stock de Productos
-          </h1>
-          <p className="text-xs text-slate-400">
-            Explora y gestiona los productos del inventario.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Stock de Productos"
+        subtitle="Explora y gestiona los productos del inventario."
+        action={
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            {/* Selector de vista */}
+            <div
+              role="group"
+              aria-label="Modo de vista"
+              className="flex items-center gap-1 rounded-xl border border-surface-border bg-brand-dark p-1"
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-pressed={viewMode === "grid"}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  viewMode === "grid"
+                    ? "bg-brand-cyan font-semibold text-brand-darkest shadow-sm"
+                    : "text-slate-400 hover:text-slate-100"
+                }`}
+              >
+                <LayoutGrid size={14} />
+                <span>Catálogo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                aria-pressed={viewMode === "table"}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  viewMode === "table"
+                    ? "bg-brand-cyan font-semibold text-brand-darkest shadow-sm"
+                    : "text-slate-400 hover:text-slate-100"
+                }`}
+              >
+                <List size={14} />
+                <span>Tabla</span>
+              </button>
+            </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          {/* BOTÓN DESLIZANTE DE MODO DE VISTA */}
-          <div className="bg-brand-dark border border-surface-border p-1 rounded-xl flex items-center gap-1">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                viewMode === "grid"
-                  ? "bg-brand-cyan text-brand-darkest font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              <LayoutGrid size={14} />
-              <span>Catálogo</span>
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                viewMode === "table"
-                  ? "bg-brand-cyan text-brand-darkest font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              <List size={14} />
-              <span>Tabla</span>
-            </button>
+            <Link href="/products/add" className="sm:w-auto">
+              <Button className="w-full sm:w-auto">
+                <Plus size={18} />
+                <span>Nuevo Producto</span>
+              </Button>
+            </Link>
           </div>
+        }
+      />
 
-          <Link href="/products/add">
-            <Button className="flex items-center gap-2">
-              <Plus size={18} />
-              <span>Nuevo Producto</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
+      {/* Filtros: búsqueda por nombre, categoría, orden y estado */}
+      {!isLoading && !isError && productos && productos.length > 0 && (
+        <ProductFilters
+          filtros={filtros}
+          onCambio={cambiarFiltro}
+          onLimpiar={limpiarFiltros}
+          categorias={categorias ?? []}
+          cargandoCategorias={cargandoCategorias}
+          total={productos.length}
+          visibles={
+            viewMode === "grid" ? productosActivos.length : productosTabla.length
+          }
+        />
+      )}
 
       {isLoading && (
         <div className="text-center py-12 text-slate-400">
@@ -150,8 +267,40 @@ export default function ProductosPage() {
         </div>
       )}
 
+      {/* Catálogo y tabla vacíos por filtros, no por falta de datos */}
+      {productos && productos.length > 0 && productosFiltrados.length === 0 && (
+        <div className="text-center py-12 border border-dashed border-surface-border rounded-xl">
+          <Package className="mx-auto text-slate-500 mb-2" size={40} />
+          <p className="text-slate-400">
+            Ningún producto coincide con los filtros aplicados.
+          </p>
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            className="mt-3 text-xs font-semibold text-brand-cyan transition-colors hover:text-emerald-400"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      )}
+
+      {/* Catálogo sin activos: hay productos, pero todos inactivos */}
+      {viewMode === "grid" &&
+        productos &&
+        productos.length > 0 &&
+        productosFiltrados.length > 0 &&
+        productosActivos.length === 0 && (
+          <div className="text-center py-12 border border-dashed border-surface-border rounded-xl">
+            <Package className="mx-auto text-slate-500 mb-2" size={40} />
+            <p className="text-slate-400">
+              No hay productos activos. Cambia a la vista de tabla o activa
+              alguno para verlo en el catálogo.
+            </p>
+          </div>
+        )}
+
       {/* VISTA EN MODO CATÁLOGO (GRID) - SOLO PRODUCTOS ACTIVOS */}
-      {viewMode === "grid" && (
+      {viewMode === "grid" && productosActivos.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {productosActivos.map((producto: any) => (
             <div
@@ -228,8 +377,8 @@ export default function ProductosPage() {
         </div>
       )}
 
-      {/* VISTA EN MODO TABLA - ACTIVOS E INACTIVOS ORDENADOS ALFABÉTICAMENTE */}
-      {viewMode === "table" && (
+      {/* VISTA EN MODO TABLA - ACTIVOS E INACTIVOS, según el orden elegido */}
+      {viewMode === "table" && productosTabla.length > 0 && (
         <div className="bg-brand-dark border border-surface-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-300">
@@ -246,7 +395,7 @@ export default function ProductosPage() {
               </thead>
               <tbody className="divide-y divide-surface-border/60">
                 {productosTabla.map((producto: any) => {
-                  const isActive = producto.isActive ?? producto.activo ?? true;
+                  const isActive = estaActivo(producto);
 
                   return (
                     <tr
